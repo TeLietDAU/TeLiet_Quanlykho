@@ -1,0 +1,29 @@
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql # Lưu dữ liệu DB ra ngoài để không mất khi tắt container
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app # Đồng bộ code từ máy thật vào container (Code thay đổi -> Server tự nhận)
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env # Nạp biến môi trường từ file .env
+
+volumes:
+  mysql_data:
