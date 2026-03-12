@@ -76,9 +76,9 @@ WSGI_APPLICATION = 'quanlykho.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'my_default_db'),    # Tên database bạn vừa tạo ở Bước 1
+        'NAME': os.environ.get('DB_NAME', 'quanlykhovatlieu'),    # Tên database bạn vừa tạo ở Bước 1
         'USER': os.environ.get('DB_USER', 'root'),                # Tên tài khoản MySQL (mặc định XAMPP là 'root')
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),                # Mật khẩu (XAMPP thường để trống, nếu bạn cài MySQL rời thì nhập pass của bạn vào)
+        'PASSWORD': os.environ.get('DB_PASSWORD', '123456'),                # Mật khẩu (XAMPP thường để trống, nếu bạn cài MySQL rời thì nhập pass của bạn vào)
         'HOST': os.environ.get('DB_HOST', 'localhost'),           # Máy chủ chứa database (đang chạy trên máy bạn)
         'PORT': os.environ.get('DB_PORT', '3306'),                # Cổng mặc định của MySQL
     }
