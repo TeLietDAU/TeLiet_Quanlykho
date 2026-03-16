@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',  # Thêm ứng dụng của bạn vào đây
-    'apps.vat_lieu',
+    'apps.product',
 ]
 
 MIDDLEWARE = [
