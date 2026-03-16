@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',  # Thêm ứng dụng của bạn vào đây
-    'apps.vat_lieu',
+    'apps.product',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'middlewares.xu_ly_loi.XuLyLoiMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
