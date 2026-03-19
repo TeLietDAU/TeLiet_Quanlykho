@@ -1,10 +1,21 @@
+import json
+import uuid
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import connections
 from django.db.utils import OperationalError
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
+# --- IMPORT TẦNG SERVICE ---
+from apps.authentication.services import UserService
+from apps.product.models import ProductUnit, Product # Mở comment và đảm bảo path đúng
 
+# ==========================================
+# 1. HỆ THỐNG & SỨC KHỎE (HEALTH CHECK)
+# ==========================================
 def health_check(request):
     health_status = {"api": "ok", "database": "ok"}
     status_code = 200
@@ -20,46 +31,66 @@ def health_check(request):
         status_code = 500
     return JsonResponse(health_status, status=status_code)
 
-
+# ==========================================
+# 2. XÁC THỰC NGƯỜI DÙNG (KẾT NỐI SERVICE)
+# ==========================================
 def login_view(request):
+    # Nếu đã đăng nhập rồi thì vào thẳng Dashboard
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        if username and password:
-            request.session['user_email'] = username
-            request.session['user_initial'] = username[0].upper()
+        
+        # Gọi Service để xử lý xác thực
+        auth_service = UserService()
+        user = auth_service.login_service(request, username, password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Chào mừng trở lại, {user.username}!')
             return redirect('dashboard')
         else:
-            messages.error(request, 'Vui lòng nhập đầy đủ thông tin.')
+            messages.error(request, 'Tên đăng nhập hoặc mật khẩu không đúng hoặc tài khoản bị khóa.')
+            
     return render(request, 'login.html')
 
-
 def logout_view(request):
-    request.session.flush()
+    logout(request)
     return redirect('login')
 
-
-def _require_login(request):
-    """Trả về None nếu đã đăng nhập, redirect nếu chưa."""
-    if not request.session.get('user_email'):
-        return redirect('login')
-    return None
-
-
+# ==========================================
+# 3. HÀM BỔ TRỢ (SỬ DỤNG TRƯỜNG ROLE MỚI)
+# ==========================================
 def _base_context(request):
-    """Context dùng chung cho tất cả trang có sidebar."""
+    """Lấy thông tin hiển thị dựa trên Custom User Model."""
+    user = request.user
+    role_name = "Thành viên"
+    
+    if user.is_authenticated:
+        # Tận dụng trường 'role' trực tiếp từ Model User bạn đã tạo
+        roles_map = {
+            'ADMIN': 'Quản trị viên',
+            'KHO': 'Thủ kho',
+            'SALE': 'Nhân viên bán hàng',
+            'KE_TOAN': 'Kế toán',
+        }
+        # Lấy tên hiển thị Tiếng Việt từ Map, nếu không có thì dùng giá trị gốc
+        role_name = roles_map.get(user.role, user.role)
+
     return {
-        'user_email': request.session.get('user_email', 'admin@teliet.vn'),
-        'user_initial': request.session.get('user_initial', 'A'),
-        'user_role': request.session.get('user_role', 'Quản trị viên'),
+        'user_full_name': getattr(user, 'full_name', user.username) if user.is_authenticated else "Khách",
+        'user_initial': user.username[0].upper() if user.is_authenticated else '?',
+        'user_role': role_name,
     }
 
-
+# ==========================================
+# 4. CÁC TRANG TỔNG QUAN (DASHBOARD)
+# ==========================================
+@login_required
 def dashboard_view(request):
-    check = _require_login(request)
-    if check:
-        return check
-
+    # Dữ liệu mẫu cho Dashboard
     stats = [
         {'label': 'Tổng đơn hàng', 'value': '1,284', 'change': '+12.5%', 'is_positive': True},
         {'label': 'Doanh thu tháng', 'value': '452M đ', 'change': '+8.2%', 'is_positive': True},
@@ -70,9 +101,6 @@ def dashboard_view(request):
     orders = [
         {'ma_don': '#ORD-7721', 'khach_hang': 'Nguyễn Văn A', 'vat_lieu': 'Xi măng Hà Tiên', 'ngay_tao': '07/03/2026', 'trang_thai': 'Đang xử lý', 'trang_thai_class': 'processing', 'dot_color': '#f59e0b', 'tong_tien': '1,200,000đ'},
         {'ma_don': '#ORD-7722', 'khach_hang': 'Trần Thị B', 'vat_lieu': 'Sắt phi 16', 'ngay_tao': '06/03/2026', 'trang_thai': 'Đã giao', 'trang_thai_class': 'done', 'dot_color': '#22c55e', 'tong_tien': '850,000đ'},
-        {'ma_don': '#ORD-7723', 'khach_hang': 'Lê Minh C', 'vat_lieu': 'Gạch ốp lát', 'ngay_tao': '05/03/2026', 'trang_thai': 'Chờ xác nhận', 'trang_thai_class': 'pending', 'dot_color': '#3b82f6', 'tong_tien': '3,450,000đ'},
-        {'ma_don': '#ORD-7724', 'khach_hang': 'Phạm Thị D', 'vat_lieu': 'Cát xây dựng', 'ngay_tao': '04/03/2026', 'trang_thai': 'Đã hủy', 'trang_thai_class': 'cancel', 'dot_color': '#ef4444', 'tong_tien': '620,000đ'},
-        {'ma_don': '#ORD-7725', 'khach_hang': 'Hoàng Văn E', 'vat_lieu': 'Tôn lợp mái', 'ngay_tao': '03/03/2026', 'trang_thai': 'Đã giao', 'trang_thai_class': 'done', 'dot_color': '#22c55e', 'tong_tien': '5,200,000đ'},
     ]
 
     context = {
@@ -85,30 +113,36 @@ def dashboard_view(request):
     }
     return render(request, 'dashboard.html', context)
 
+# ==========================================
+# 5. QUẢN LÝ NGHIỆP VỤ (DÙNG LOGIN_REQUIRED)
+# ==========================================
+@login_required
+def product_view(request):
+    return render(request, 'Product.html', _base_context(request))
 
-def products_view(request):
-    check = _require_login(request)
-    if check:
-        return check
-    return render(request, 'products.html', _base_context(request))
-
-
-def categories_view(request):
-    check = _require_login(request)
-    if check:
-        return check
-    return render(request, 'categories.html', _base_context(request))
-
-
+@login_required
 def units_view(request):
-    check = _require_login(request)
-    if check:
-        return check
-    return render(request, 'units.html', _base_context(request))
+    """Trang hiển thị Đơn vị quy đổi (AJAX)"""
+    # Lấy dữ liệu thực từ DB để truyền cho giao diện AJAX
+    unit_list = ProductUnit.objects.select_related('product').all()
+    units_data = [{
+        'id': str(u.id),
+        'unit_name': u.unit_name,
+        'conversion_rate': float(u.conversion_rate),
+        'product_name': u.product.name,
+        'base_unit': u.product.base_unit
+    } for u in unit_list]
 
+    product_list = Product.objects.all()
+    Product_data = [{
+        'id': str(p.id),
+        'name': p.name,
+        'base_unit': p.base_unit
+    } for p in product_list]
 
-def accounts_view(request):
-    check = _require_login(request)
-    if check:
-        return check
-    return render(request, 'accounts.html', _base_context(request))
+    context = {
+        **_base_context(request),
+        'units_json': units_data,
+        'Product_json': Product_data,
+    }
+    return render(request, 'units.html', context)
