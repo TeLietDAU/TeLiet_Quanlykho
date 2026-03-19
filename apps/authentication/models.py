@@ -31,3 +31,54 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'users'
+
+    def save(self, *args, **kwargs):
+        # 1. Lưu user trước để đảm bảo có ID (đặc biệt quan trọng với UUID)
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+
+        # 2. Định nghĩa danh sách quyền cho từng vai trò
+        # Cấu trúc: 'CODENAME': 'APP_LABEL'
+        ROLE_PERMISSIONS = {
+            'KHO': [
+                ('view_product', 'product'),
+                ('add_product', 'product'),
+                ('change_product', 'product'),
+                ('view_category', 'product'),
+                ('view_productunit', 'product'),
+                ('add_productunit', 'product'),
+            ],
+            'SALE': [
+                ('view_product', 'product'),
+                ('view_category', 'product'),
+                ('view_productunit', 'product'),
+                # Sale có thể thêm quyền xem đơn hàng ở đây...
+            ],
+            'KE_TOAN': [
+                ('view_product', 'product'),
+                # Kế toán có thêm quyền về công nợ, hóa đơn...
+            ]
+        }
+
+        # 3. Thực hiện gán quyền nếu không phải ADMIN tối cao
+        if self.role in ROLE_PERMISSIONS and not self.is_superuser:
+            # Lấy danh sách quyền từ dictionary trên
+            perms_to_add = []
+            for codename, app_label in ROLE_PERMISSIONS[self.role]:
+                try:
+                    perm = Permission.objects.get(
+                        codename=codename,
+                        content_type__app_label=app_label
+                    )
+                    perms_to_add.append(perm)
+                except Permission.DoesNotExist:
+                    continue
+            
+            # Xóa quyền cũ và thêm quyền mới để tránh bị trùng lặp hoặc thừa quyền khi đổi Role
+            self.user_permissions.set(perms_to_add)
+
+        # Nếu là ADMIN, cấp toàn bộ quyền staff
+        if self.role == 'ADMIN':
+            self.is_staff = True
+            self.is_superuser = True
+            super().save(update_fields=['is_staff', 'is_superuser'])

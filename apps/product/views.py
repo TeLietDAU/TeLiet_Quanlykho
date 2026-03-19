@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.http import JsonResponse
@@ -11,7 +11,10 @@ from .services import ProductService, CategoryService
 # ==========================================
 # 1. QUẢN LÝ SẢN PHẨM (PRODUCT)
 # ==========================================
-class ProductListView(LoginRequiredMixin, View):
+class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.view_product' # Quyền xem sản phẩm
+    raise_exception = True # Trả về lỗi 403 thay vì redirect về login nếu thiếu quyền
+    
     def get(self, request):
         service = ProductService()
         cat_service = CategoryService()
@@ -24,14 +27,16 @@ class ProductListView(LoginRequiredMixin, View):
         paginator = Paginator(queryset, 10)
         page_obj = paginator.get_page(trang_hien_tai)
 
-        # Đảm bảo file HTML của bạn tên là 'product_list.html' (hoặc 'index.html' tùy bạn đặt)
         return render(request, 'product/product_list.html', {
             'products': page_obj,
             'categories': cat_service.get_list(),
             'tong_so_luong': paginator.count
         })
 
-class ProductDetailView(LoginRequiredMixin, View):
+class ProductDetailView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.view_product'
+    raise_exception = True
+    
     def get(self, request, pk):
         service = ProductService()
         product = service.repository.get_by_id(pk)
@@ -42,7 +47,10 @@ class ProductDetailView(LoginRequiredMixin, View):
             'units': units
         })
 
-class ProductCreateView(LoginRequiredMixin, View):
+class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.add_product' # Quyền thêm sản phẩm (Role KHO)
+    raise_exception = True
+
     def post(self, request):
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
@@ -55,7 +63,10 @@ class ProductCreateView(LoginRequiredMixin, View):
         
         return redirect('product:product_list')
 
-class ProductUpdateView(LoginRequiredMixin, View):
+class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.change_product' # Quyền sửa sản phẩm
+    raise_exception = True
+
     def post(self, request, pk):
         service = ProductService()
         
@@ -74,7 +85,10 @@ class ProductUpdateView(LoginRequiredMixin, View):
             
         return redirect('product:product_list')
 
-class ProductDeleteView(LoginRequiredMixin, View):
+class ProductDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.delete_product' # Quyền xóa (Thường chỉ dành cho ADMIN)
+    raise_exception = True
+    
     def post(self, request, pk):
         service = ProductService()
         
@@ -93,7 +107,10 @@ class ProductDeleteView(LoginRequiredMixin, View):
 # ==========================================
 # 2. QUẢN LÝ DANH MỤC (CATEGORY)
 # ==========================================
-class CategoryListView(LoginRequiredMixin, View):
+class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.view_category'
+    raise_exception = True
+
     def get(self, request):
         service = CategoryService()
         categories = service.get_list() 
@@ -118,7 +135,10 @@ class CategoryListView(LoginRequiredMixin, View):
             
         return redirect('product:category_list')
 
-class CategoryUpdateView(LoginRequiredMixin, View):
+class CategoryUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.change_category'
+    raise_exception = True
+    
     def post(self, request, pk):
         service = CategoryService()
         category = service.repository.get_by_id(pk)
@@ -132,7 +152,10 @@ class CategoryUpdateView(LoginRequiredMixin, View):
             
         return redirect('product:category_list')
 
-class CategoryDeleteView(LoginRequiredMixin, View):
+class CategoryDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.delete_category'
+    raise_exception = True
+
     def post(self, request, pk):
         service = CategoryService()
         category = service.repository.get_by_id(pk)
@@ -149,7 +172,10 @@ class CategoryDeleteView(LoginRequiredMixin, View):
 # ==========================================
 # 3. QUẢN LÝ ĐƠN VỊ TÍNH (PRODUCT UNIT)
 # ==========================================
-class ProductUnitListView(LoginRequiredMixin, View):
+class ProductUnitListView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.view_productunit'
+    raise_exception = True
+    
     def get(self, request):
         service = ProductService()
         units = service.unit_repository.get_all()
@@ -162,7 +188,10 @@ class ProductUnitListView(LoginRequiredMixin, View):
             'title': 'Quản lý Đơn vị & Quy đổi'
         })
     
-class ProductUnitCreateView(LoginRequiredMixin, View):
+class ProductUnitCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.add_productunit' # Role KHO có quyền này
+    raise_exception = True
+
     def post(self, request): 
         service = ProductService()
         product_id = request.POST.get('product_id') 
@@ -182,7 +211,10 @@ class ProductUnitCreateView(LoginRequiredMixin, View):
             
         return redirect('product:units_list')
 
-class ProductUnitUpdateView(LoginRequiredMixin, View):
+class ProductUnitUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'product.change_productunit'
+    raise_exception = True
+
     """Bổ sung View xử lý Sửa Đơn vị tính (Cho khớp với Modal Edit)"""
     def post(self, request, pk):
         service = ProductService()
@@ -207,7 +239,10 @@ class ProductUnitUpdateView(LoginRequiredMixin, View):
             
         return redirect('product:units_list')
 
-class ProductUnitDeleteView(LoginRequiredMixin, View):
+class ProductUnitDeleteView(LoginRequiredMixin , PermissionRequiredMixin, View):
+    permission_required = 'product.delete_productunit'
+    raise_exception = True
+    
     def post(self, request, pk):
         service = ProductService()
         
