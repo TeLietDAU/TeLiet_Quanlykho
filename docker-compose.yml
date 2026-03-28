@@ -11,6 +11,7 @@ services:
       - "3309:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./quanlykhovatlieu.sql:/docker-entrypoint-initdb.d/quanlykhovatlieu.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
       interval: 5s
