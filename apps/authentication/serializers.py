@@ -63,8 +63,86 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True, write_only=True)
     new_password = serializers.CharField(required=True, write_only=True, min_length=6)
+    new_password_confirm = serializers.CharField(required=True, write_only=True, min_length=6)
 
     def validate_new_password(self, value):
         if len(value) < 6:
             raise serializers.ValidationError("Mật khẩu mới phải có ít nhất 6 ký tự.")
+        if len(value) > 128:
+            raise serializers.ValidationError("Mật khẩu quá dài.")
+        return value
+    
+    def validate(self, data):
+        if data.get('new_password') != data.get('new_password_confirm'):
+            raise serializers.ValidationError({"new_password": "Mật khẩu mới không khớp."})
+        return data
+
+
+# ============================================================
+# USER CREATE SERIALIZER - Tạo người dùng mới
+# ============================================================
+class UserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=6)
+    password_confirm = serializers.CharField(write_only=True, min_length=6)
+    
+    class Meta:
+        model = User
+        fields = ['username', 'full_name', 'email', 'phone_number', 'password', 'password_confirm', 'role']
+    
+    def validate_username(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError("Tên đăng nhập phải có ít nhất 3 ký tự.")
+        if len(value) > 150:
+            raise serializers.ValidationError("Tên đăng nhập không được vượt quá 150 ký tự.")
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Tên đăng nhập đã tồn tại.")
+        return value
+    
+    def validate_full_name(self, value):
+        if value and len(value) < 2:
+            raise serializers.ValidationError("Họ tên phải có ít nhất 2 ký tự.")
+        if value and len(value) > 100:
+            raise serializers.ValidationError("Họ tên không được vượt quá 100 ký tự.")
+        return value
+    
+    def validate_phone_number(self, value):
+        if value:
+            if not value.isdigit():
+                raise serializers.ValidationError("Số điện thoại chỉ được chứa chữ số.")
+            if len(value) < 10 or len(value) > 11:
+                raise serializers.ValidationError("Số điện thoại phải có 10-11 chữ số.")
+        return value
+    
+    def validate(self, data):
+        if data.get('password') != data.get('password_confirm'):
+            raise serializers.ValidationError({"password": "Mật khẩu không khớp."})
+        return data
+    
+    def create(self, validated_data):
+        validated_data.pop('password_confirm', None)
+        user = User.objects.create_user(**validated_data)
+        return user
+
+
+# ============================================================
+# USER UPDATE SERIALIZER - Cập nhật thông tin người dùng
+# ============================================================
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['full_name', 'email', 'phone_number', 'address']
+    
+    def validate_full_name(self, value):
+        if value and len(value) < 2:
+            raise serializers.ValidationError("Họ tên phải có ít nhất 2 ký tự.")
+        if value and len(value) > 100:
+            raise serializers.ValidationError("Họ tên không được vượt quá 100 ký tự.")
+        return value
+    
+    def validate_phone_number(self, value):
+        if value:
+            if not value.isdigit():
+                raise serializers.ValidationError("Số điện thoại chỉ được chứa chữ số.")
+            if len(value) < 10 or len(value) > 11:
+                raise serializers.ValidationError("Số điện thoại phải có 10-11 chữ số.")
         return value

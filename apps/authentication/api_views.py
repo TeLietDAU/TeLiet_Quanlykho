@@ -109,3 +109,72 @@ class ChangePasswordAPIView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================
+# 5. TẠO SESSION TỪ JWT (POST /api/xac-thuc/create-session/)
+# ============================================================
+class CreateSessionFromTokenView(APIView):
+    """
+    Tạo Django session từ JWT token.
+    Dùng cho việc redirect từ API login sang Django views thông thường.
+    
+    Cách dùng:
+    - Frontend gọi API login → nhận tokens
+    - Frontend gọi endpoint này → server tạo session
+    - Frontend redirect đến /dashboard/
+    
+    Payload:
+    {
+        "access_token": "eyJhbGciO..."
+    }
+    
+    Response:
+    {
+        "message": "Session tạo thành công",
+        "redirect_url": "/dashboard/"
+    }
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
+        from django.contrib.auth import login
+
+        try:
+            access_token = request.data.get("access_token")
+            
+            if not access_token:
+                return Response(
+                    {"message": "Vui lòng cung cấp access_token"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Verify token và lấy user
+            jwt_auth = JWTAuthentication()
+            validated_token = jwt_auth.get_validated_token(access_token)
+            user = jwt_auth.get_user(validated_token)
+
+            # Create session for user (Django session auth)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+            return Response(
+                {
+                    "message": "Session tạo thành công", 
+                    "redirect_url": "/dashboard/"
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except (InvalidToken, AuthenticationFailed) as e:
+            return Response(
+                {"message": f"Access token không hợp lệ: {str(e)}"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            return Response(
+                {"message": f"Lỗi: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+

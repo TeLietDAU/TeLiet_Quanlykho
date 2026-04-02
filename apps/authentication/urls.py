@@ -3,7 +3,8 @@ from .api_views import (
     LoginAPIView,
     LogoutAPIView,
     UserProfileAPIView,
-    ChangePasswordAPIView
+    ChangePasswordAPIView,
+    CreateSessionFromTokenView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -23,4 +24,8 @@ urlpatterns = [
     
     # (Bổ sung) Refresh token cho FE
     path('refresh/', TokenRefreshView.as_view(), name='api_token_refresh'),
+    
+    # POST /api/xac-thuc/create-session/ - Tạo Django session từ JWT token
+    path('create-session/', CreateSessionFromTokenView.as_view(), name='api_create_session'),
 ]
+

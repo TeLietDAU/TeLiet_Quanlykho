@@ -95,6 +95,10 @@ DATABASES = {
 # User model tùy chỉnh
 AUTH_USER_MODEL = 'authentication.User'
 
+# Login URL - Nơi redirect khi user chưa đăng nhập
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+
 # ============================================================
 # ✅ CORS CONFIGURATION
 # Cho phép Frontend (React/Vue/...) gọi API từ domain khác
