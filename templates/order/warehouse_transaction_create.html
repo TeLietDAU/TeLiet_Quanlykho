@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Tạo Giao Dịch Kho — TeLiet System{% endblock %}
+{% block breadcrumb %}Tạo Giao Dịch Kho{% endblock %}
+{% block nav_order %}active{% endblock %}
+
+{% block extra_css %}
+.form-container { max-width: 800px; margin: 0 auto; }
+.form-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text); }
+.field { margin-bottom: 20px; }
+.field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.field input, .field select, .field textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+.field input::placeholder, .field textarea::placeholder { color: #3a3e47; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,164,39,0.08); }
+.field textarea { resize: none; height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #0e0f11; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); background: var(--surface3); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Tạo Giao Dịch Kho</h1>
+        <p class="page-sub">Ghi nhận giao dịch nhập/xuất kho</p>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="form-section">
+        {% csrf_token %}
+        
+        <div class="section-title">Thông Tin Giao Dịch</div>
+        
+        <div class="form-row">
+            <div class="field">
+                <label class="field-label">Mã Giao Dịch *</label>
+                <input type="text" name="code" required placeholder="VD: GD001">
+            </div>
+            <div class="field">
+                <label class="field-label">Loại Giao Dịch *</label>
+                <select name="transaction_type" required>
+                    <option value="Import">Nhập Kho</option>
+                    <option value="Export">Xuất Kho</option>
+                    <option value="Transfer">Chuyển Kho</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="field">
+                <label class="field-label">Sản Phẩm *</label>
+                <input type="text" name="product" required placeholder="Tên sản phẩm">
+            </div>
+            <div class="field">
+                <label class="field-label">Kho *</label>
+                <select name="warehouse" required>
+                    <option value="Main">Kho Chính</option>
+                    <option value="Secondary">Kho Phụ</option>
+                    <option value="Temp">Kho Tạm</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="field">
+                <label class="field-label">Số Lượng *</label>
+                <input type="number" name="quantity" required placeholder="0" min="1" step="1">
+            </div>
+            <div class="field">
+                <label class="field-label">Ngày Giao Dịch *</label>
+                <input type="datetime-local" name="transaction_date" required>
+            </div>
+        </div>
+        
+        <div class="field">
+            <label class="field-label">Ghi Chú</label>
+            <textarea name="notes" placeholder="Thêm ghi chú nếu cần..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'order:order_list' %}" class="btn btn-ghost">Hủy</a>
+            <button type="submit" class="btn btn-primary">Tạo Giao Dịch</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

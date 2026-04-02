@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Danh Sách Đơn Hàng — TeLiet System{% endblock %}
+{% block breadcrumb %}Danh Sách Đơn Hàng{% endblock %}
+{% block nav_order %}active{% endblock %}
+
+{% block extra_css %}
+.page-header-with-btn { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; }
+.page-header-with-btn > div { display: flex; align-items: center; gap: 24px; }
+.top-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.top-stat-card { background: var(--surface3); padding: 20px; border-radius: 8px; text-align: center; }
+.top-stat-label { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; margin-bottom: 10px; font-weight: 700; }
+.top-stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+.search-row { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+.search-row input { background: var(--surface2); border: 1px solid var(--border); padding: 11px 14px; border-radius: 8px; color: var(--text); font-size: 13px; flex: 1; max-width: 300px; }
+.search-row select { background: var(--surface2); border: 1px solid var(--border); padding: 9px 12px; border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer; }
+.search-row .btn { margin: 0; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-state-text { font-size: 13px; margin-top: 10px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header-with-btn">
+    <div>
+        <a href="{% url 'order:order_list' %}" class="btn btn-ghost">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+            </svg>
+            Quay Lại
+        </a>
+        <h1 class="page-title">Danh Sách Đơn Hàng</h1>
+    </div>
+    <button class="btn btn-primary" onclick="window.location.href='{% url 'order:sales_order_create' %}'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Tạo Đơn Hàng
+    </button>
+</div>
+
+<!-- TOP STATS -->
+<div class="top-stats">
+    <div class="top-stat-card">
+        <div class="top-stat-label">Tổng Đơn Hàng</div>
+        <div class="top-stat-value">0</div>
+    </div>
+    <div class="top-stat-card">
+        <div class="top-stat-label">Đang Chờ</div>
+        <div class="top-stat-value">0</div>
+    </div>
+    <div class="top-stat-card">
+        <div class="top-stat-label">Hoàn Thành</div>
+        <div class="top-stat-value">0</div>
+    </div>
+    <div class="top-stat-card">
+        <div class="top-stat-label">Tổng Giá Trị</div>
+        <div class="top-stat-value">0</div>
+    </div>
+</div>
+
+<!-- SEARCH & FILTER -->
+<div class="search-row">
+    <input type="text" placeholder="Tìm mã đơn...">
+    <select>
+        <option>Tất cả trạng thái</option>
+        <option>Chờ xử lý</option>
+        <option>Hoàn thành</option>
+        <option>Đã hủy</option>
+    </select>
+    <button class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        Tìm Kiếm
+    </button>
+</div>
+
+<!-- EMPTY STATE -->
+<div class="card">
+    <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="margin: 0 auto;">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/>
+        </svg>
+        <div class="empty-state-text">Không có đơn hàng nào</div>
+    </div>
+</div>
+
+{% endblock %}

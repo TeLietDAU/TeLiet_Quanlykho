@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Thêm Nợ Khách Hàng — TeLiet System{% endblock %}
+{% block breadcrumb %}Thêm Nợ{% endblock %}
+{% block nav_order %}active{% endblock %}
+
+{% block extra_css %}
+.form-container { max-width: 800px; margin: 0 auto; }
+.form-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text); }
+.field { margin-bottom: 20px; }
+.field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.field input, .field select, .field textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+.field input::placeholder, .field textarea::placeholder { color: #3a3e47; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,164,39,0.08); }
+.field textarea { resize: none; height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #0e0f11; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); background: var(--surface3); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Thêm Nợ Khách Hàng</h1>
+        <p class="page-sub">Ghi nhận khoản nợ mới phát sinh</p>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="form-section">
+        {% csrf_token %}
+        
+        <div class="section-title">Thông Tin Nợ</div>
+        
+        <div class="field">
+            <label class="field-label">Khách Hàng *</label>
+            <input type="text" name="customer_name" required placeholder="Tên công ty hoặc cá nhân">
+        </div>
+        
+        <div class="form-row">
+            <div class="field">
+                <label class="field-label">Số Tiền Nợ (VNĐ) *</label>
+                <input type="number" name="remaining_amount" required placeholder="0" min="0" step="1000">
+            </div>
+            <div class="field">
+                <label class="field-label">Ngày Hạn Thanh Toán *</label>
+                <input type="date" name="due_date" required>
+            </div>
+        </div>
+        
+        <div class="field">
+            <label class="field-label">Trạng Thái *</label>
+            <select name="status" required>
+                <option value="Pending">Chưa thanh toán</option>
+                <option value="Completed">Đã thanh toán</option>
+                <option value="Overdue">Quá hạn</option>
+            </select>
+        </div>
+        
+        <div class="field">
+            <label class="field-label">Ghi Chú</label>
+            <textarea name="notes" placeholder="Thêm ghi chú nếu cần..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'order:order_list' %}" class="btn btn-ghost">Hủy</a>
+            <button type="submit" class="btn btn-primary">Thêm Nợ</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

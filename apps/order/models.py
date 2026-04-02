@@ -29,11 +29,12 @@ class SalesOrder(models.Model):
 
 class CustomerDebt(models.Model):
     id = models.BigAutoField(primary_key=True)
-    sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='order_debts')
+    sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='order_debts', null=True, blank=True)
     customer_name = models.CharField(max_length=100)
     remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     due_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, default='Pending')
+    notes = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = 'customer_debts'
@@ -41,12 +42,13 @@ class CustomerDebt(models.Model):
 class WarehouseTransaction(models.Model):
     id = models.BigAutoField(primary_key=True)
     code = models.CharField(max_length=20, unique=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_transactions')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='order_transactions')
+    product = models.CharField(max_length=255)  # Changed from ForeignKey to CharField for flexibility
+    warehouse = models.CharField(max_length=100)  # Changed from ForeignKey to CharField for flexibility
     quantity = models.DecimalField(max_digits=15, decimal_places=2)
     transaction_type = models.CharField(max_length=20)
     transaction_date = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    notes = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = 'warehouse_transactions'

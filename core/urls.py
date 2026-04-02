@@ -31,6 +31,9 @@ urlpatterns = [
 
     # KẾT NỐI APP PRODUCT VÀO HỆ THỐNG
     path('', include('apps.product.urls')),
+    
+    # KẾT NỐI APP ORDER VÀO HỆ THỐNG
+    path('', include('apps.order.urls')),
 
     path('units/', views.units_view, name='units'),
     # path('accounts/', views.accounts_view, name='accounts'),

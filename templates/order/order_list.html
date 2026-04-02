@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Đơn hàng — TeLiet System{% endblock %}
+{% block breadcrumb %}Đơn hàng{% endblock %}
+{% block nav_order %}active{% endblock %}
+
+{% block extra_css %}
+.top-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.top-stat-card { background: var(--surface3); padding: 20px; border-radius: 8px; text-align: center; }
+.top-stat-label { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; margin-bottom: 10px; font-weight: 700; }
+.top-stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.feature-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.feature-desc { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+.feature-stats { display: flex; gap: 12px; margin: 20px 0; }
+.stat-small { background: var(--surface2); padding: 16px; border-radius: 8px; flex: 1; text-align: center; }
+.stat-value-small { font-size: 22px; font-weight: 700; color: var(--accent); }
+.stat-label-small { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-top: 8px; letter-spacing: 0.5px; }
+.feature-button { width: 100%; padding: 12px 16px; background: var(--accent); color: #0e0f11; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
+.feature-button:hover { background: var(--accent2); }
+.feature-button-secondary { width: 100%; padding: 12px 16px; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; }
+.feature-button-secondary:hover { background: rgba(232,164,39,0.08); }
+.section-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); position: relative; padding-bottom: 12px; margin-bottom: 24px; }
+.section-title::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 1px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Quản Lý Đơn Hàng</h1>
+    </div>
+</div>
+
+<!-- TOP STATS -->
+<div class="top-stats">
+    <div class="top-stat-card">
+        <div class="top-stat-label">Tổng Đơn Hàng</div>
+        <div class="top-stat-value">0</div>
+    </div>
+    <div class="top-stat-card">
+        <div class="top-stat-label">Đơn Chờ Xử Lý</div>
+        <div class="top-stat-value">0</div>
+    </div>
+    <div class="top-stat-card">
+        <div class="top-stat-label">Tổng Nợ</div>
+        <div class="top-stat-value">0</div>
+    </div>
+    <div class="top-stat-card">
+        <div class="top-stat-label">Giao Dịch Hôm Nay</div>
+        <div class="top-stat-value">0</div>
+    </div>
+</div>
+
+<div class="section-title"></div>
+
+<div class="features-grid">
+    <!-- ĐƠNHÀNG -->
+    <div class="feature-card">
+        <div class="feature-title">Đơn Hàng</div>
+        <div class="feature-desc">Quản lý bán hàng</div>
+        <div class="feature-stats">
+            <div class="stat-small">
+                <div class="stat-value-small">{{ orders|length }}</div>
+                <div class="stat-label-small">Tổng</div>
+            </div>
+            <div class="stat-small">
+                <div class="stat-value-small">0</div>
+                <div class="stat-label-small">Chờ xử lý</div>
+            </div>
+        </div>
+        <button class="feature-button" onclick="window.location.href='{% url 'order:sales_order_list' %}'">Xem Danh Sách</button>
+        <button class="feature-button-secondary" onclick="window.location.href='{% url 'order:sales_order_create' %}'">Tạo Đơn Mới</button>
+    </div>
+
+    <!-- NỢ KHÁCH HÀNG -->
+    <div class="feature-card">
+        <div class="feature-title">Nợ Khách Hàng</div>
+        <div class="feature-desc">Quản lý công nợ</div>
+        <div class="feature-stats">
+            <div class="stat-small">
+                <div class="stat-value-small">0</div>
+                <div class="stat-label-small">Tổng nợ</div>
+            </div>
+            <div class="stat-small">
+                <div class="stat-value-small">0</div>
+                <div class="stat-label-small">Chưa thu</div>
+            </div>
+        </div>
+        <button class="feature-button" onclick="window.location.href='{% url 'order:customer_debt_list' %}'">Xem Danh Sách</button>
+        <button class="feature-button-secondary" onclick="window.location.href='{% url 'order:customer_debt_create' %}'">Thêm Nợ</button>
+    </div>
+
+    <!-- GIAO DỊCH KHO -->
+    <div class="feature-card">
+        <div class="feature-title">Giao Dịch Kho</div>
+        <div class="feature-desc">Nhập/xuất hàng hóa</div>
+        <div class="feature-stats">
+            <div class="stat-small">
+                <div class="stat-value-small">0</div>
+                <div class="stat-label-small">Tổng gd</div>
+            </div>
+            <div class="stat-small">
+                <div class="stat-value-small">0</div>
+                <div class="stat-label-small">Hôm nay</div>
+            </div>
+        </div>
+        <button class="feature-button" onclick="window.location.href='{% url 'order:warehouse_transaction_list' %}'">Xem Danh Sách</button>
+        <button class="feature-button-secondary" onclick="window.location.href='{% url 'order:warehouse_transaction_create' %}'">Tạo Giao Dịch</button>
+    </div>
+</div>
+
+{% endblock %}
