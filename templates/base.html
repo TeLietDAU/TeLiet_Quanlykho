@@ -44,6 +44,7 @@
             position: sticky;
             top: 0;
             flex-shrink: 0;
+            overflow-y: auto;
         }
         .sidebar-brand {
             padding: 24px 20px;
@@ -248,18 +249,31 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                 Sản phẩm
             </a>
-            <a href="#" class="nav-item {% block nav_orders %}{% endblock %}">
+            <a href="{% url 'order:sales_list' %}" class="nav-item {% block nav_orders %}{% endblock %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
                 Đơn hàng
-                <span class="nav-badge">5</span>
             </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Khách hàng
+            <a href="{% url 'order:debt_list' %}" class="nav-item {% block nav_debts %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Công nợ
             </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                Nhà cung cấp
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-label">Kho hàng</div>
+            <a href="{% url 'warehouse:import_list' %}" class="nav-item {% block nav_import %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Nhập kho
+            </a>
+            <a href="{% url 'warehouse:stock_list' %}" class="nav-item {% block nav_stock %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                Tồn kho
             </a>
         </div>
 
@@ -281,18 +295,14 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Tài khoản
             </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49"/></svg>
-                Cài đặt
-            </a>
         </div>
 
         <div class="sidebar-footer">
             <div class="user-card">
-                <div class="user-avatar">{{ user_initial }}</div>
-                <div class="user-details">
-                    <div class="user-name">{{ user_full_name }}</div>
-                    <div class="user-role">{{ user_role }}</div>
+                <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.full_name|default:user.username }}</div>
+                    <div class="user-role">{{ user.get_role_display|default:user.role }}</div>
                 </div>
             </div>
             <a href="{% url 'logout' %}" class="nav-item">
@@ -325,37 +335,6 @@
             {% block content %}{% endblock %}
         </div>
     </div>
-    
-    <div class="sidebar-section">
-  <div class="section-label">Kho hàng</div>
- 
-  <!-- Nhập kho: KHO tạo phiếu, KE_TOAN duyệt -->
-  <a href="{% url 'warehouse:import_list' %}" class="nav-item {% block nav_import %}{% endblock %}">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-    </svg>
-    Nhập kho
-  </a>
- 
-  <!-- Xuất kho: SALE tạo đơn -->
-  <a href="{% url 'order:sales_list' %}" class="nav-item {% block nav_sales %}{% endblock %}">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-    Xuất kho
-  </a>
- 
-  <!-- Tồn kho: mọi người xem -->
-  <a href="{% url 'warehouse:stock_list' %}" class="nav-item {% block nav_stock %}{% endblock %}">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="2" y="3" width="20" height="14" rx="2"/>
-      <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-    </svg>
-    Tồn kho
-  </a>
-</div>
 
     {% block extra_js %}{% endblock %}
 </body>

@@ -67,7 +67,7 @@ class SalesOrderListView(LoginRequiredMixin, View):
         products_data = _products_json()
         stocks_data = _stocks_json()
 
-        return render(request, 'order/sales_order_list.html', {
+        return render(request, 'order/sales_order_list.html', {  # ← đúng path
             'orders': orders,
             'products_json': json.dumps(products_data, ensure_ascii=False),
             'stocks_json': json.dumps(stocks_data),
@@ -106,7 +106,7 @@ class SalesOrderDetailView(LoginRequiredMixin, View):
             messages.error(request, 'Không tìm thấy đơn hàng.')
             return redirect('order:sales_list')
 
-        return render(request, 'order/sales_order_detail.html', {
+        return render(request, 'order/sales_order_detail.html', {  # ← đúng path
             'order': order,
             'user_role': request.user.role,
         })
@@ -120,7 +120,7 @@ class CustomerDebtListView(LoginRequiredMixin, View):
 
         debts = service.get_all(status=status_filter or None, search=search or None)
 
-        return render(request, 'order/customer_debt_list.html', {
+        return render(request, 'order/customer_debt_list.html', {  # ← đúng path
             'debts': debts,
             'status_filter': status_filter,
             'user_role': request.user.role,
