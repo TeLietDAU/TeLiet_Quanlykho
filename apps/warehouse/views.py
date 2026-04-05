@@ -4,16 +4,13 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, Q
 
 from apps.product.models import Product
 from .services import ImportReceiptService, StockService, ExportReceiptService
 from .models import ImportReceipt, ImportReceiptItem, ExportReceipt, ExportReceiptItem
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPER
-# ─────────────────────────────────────────────────────────────
 def _products_json():
     products = Product.objects.select_related('category').all().order_by('name')
     return [
@@ -47,7 +44,6 @@ def _parse_items_from_post(post_data):
 
 
 def _get_import_receipt_stats():
-    """Lấy thống kê phiếu nhập kho"""
     today = timezone.now().date()
     return {
         'total_receipts': ImportReceipt.objects.count(),
@@ -58,7 +54,6 @@ def _get_import_receipt_stats():
 
 
 def _get_export_receipt_stats():
-    """Lấy thống kê phiếu xuất kho"""
     today = timezone.now().date()
     return {
         'total_receipts': ExportReceipt.objects.count(),
@@ -73,10 +68,6 @@ def _get_export_receipt_stats():
 # ═══════════════════════════════════════════════════════════════
 
 class ImportReceiptListView(LoginRequiredMixin, View):
-    """
-    Thủ kho: thấy phiếu của mình
-    Kế toán: thấy tất cả phiếu
-    """
     def get(self, request):
         service = ImportReceiptService()
         user = request.user
@@ -93,7 +84,6 @@ class ImportReceiptListView(LoginRequiredMixin, View):
             receipts = receipts.filter(status=status_filter)
 
         if search_query:
-            from django.db.models import Q
             receipts = receipts.filter(
                 Q(receipt_code__icontains=search_query) |
                 Q(note__icontains=search_query)
@@ -112,7 +102,6 @@ class ImportReceiptListView(LoginRequiredMixin, View):
         })
 
     def post(self, request):
-        """Thủ kho tạo phiếu nhập mới"""
         if request.user.role not in ('KHO', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền tạo phiếu nhập kho.')
             return redirect('warehouse:import_list')
@@ -147,7 +136,6 @@ class ImportReceiptDetailView(LoginRequiredMixin, View):
 
 
 class ImportReceiptApproveView(LoginRequiredMixin, View):
-    """Kế toán duyệt phiếu"""
     def post(self, request, pk):
         if request.user.role not in ('KE_TOAN', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền duyệt phiếu.')
@@ -163,7 +151,6 @@ class ImportReceiptApproveView(LoginRequiredMixin, View):
 
 
 class ImportReceiptRejectView(LoginRequiredMixin, View):
-    """Kế toán từ chối phiếu"""
     def post(self, request, pk):
         if request.user.role not in ('KE_TOAN', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền từ chối phiếu.')
@@ -180,7 +167,6 @@ class ImportReceiptRejectView(LoginRequiredMixin, View):
 
 
 class ImportReceiptResubmitView(LoginRequiredMixin, View):
-    """Thủ kho sửa lại phiếu bị từ chối và gửi lại"""
     def post(self, request, pk):
         if request.user.role not in ('KHO', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền gửi lại phiếu.')
@@ -213,22 +199,20 @@ class StockListView(LoginRequiredMixin, View):
 
 
 # ═══════════════════════════════════════════════════════════════
-# XUẤT KHO
+# XUẤT KHO — Tất cả role đều có thể duyệt
 # ═══════════════════════════════════════════════════════════════
 
+# TẤT CẢ role đều được duyệt/từ chối xuất kho
+EXPORT_APPROVE_ROLES = ('KHO', 'KE_TOAN', 'ADMIN', 'SALE')
+
+
 class ExportReceiptListView(LoginRequiredMixin, View):
-    """
-    Thủ kho: thấy phiếu của mình
-    Kế toán: thấy tất cả phiếu
-    """
     def get(self, request):
         service = ExportReceiptService()
         user = request.user
 
-        if user.role in ('KE_TOAN', 'ADMIN'):
-            receipts = service.get_all()
-        else:
-            receipts = service.get_by_user(user)
+        # Tất cả đều thấy tất cả phiếu xuất
+        receipts = service.get_all()
 
         status_filter = request.GET.get('status', '')
         search_query = request.GET.get('search', '')
@@ -237,7 +221,6 @@ class ExportReceiptListView(LoginRequiredMixin, View):
             receipts = receipts.filter(status=status_filter)
 
         if search_query:
-            from django.db.models import Q
             receipts = receipts.filter(
                 Q(receipt_code__icontains=search_query) |
                 Q(note__icontains=search_query)
@@ -256,7 +239,7 @@ class ExportReceiptListView(LoginRequiredMixin, View):
         })
 
     def post(self, request):
-        """Thủ kho tạo phiếu xuất mới"""
+        """KHO và ADMIN tạo phiếu xuất thủ công"""
         if request.user.role not in ('KHO', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền tạo phiếu xuất kho.')
             return redirect('warehouse:export_list')
@@ -267,7 +250,7 @@ class ExportReceiptListView(LoginRequiredMixin, View):
 
         receipt, error = service.create_receipt(note, items_data, request.user)
         if receipt:
-            messages.success(request, f'Đã tạo phiếu xuất {receipt.receipt_code} thành công. Đang chờ kế toán duyệt.')
+            messages.success(request, f'Đã tạo phiếu xuất {receipt.receipt_code} thành công. Chờ duyệt.')
         else:
             messages.error(request, error)
 
@@ -291,12 +274,8 @@ class ExportReceiptDetailView(LoginRequiredMixin, View):
 
 
 class ExportReceiptApproveView(LoginRequiredMixin, View):
-    """Kế toán duyệt phiếu"""
+    """Tất cả role đều duyệt được"""
     def post(self, request, pk):
-        if request.user.role not in ('KE_TOAN', 'ADMIN'):
-            messages.error(request, 'Bạn không có quyền duyệt phiếu.')
-            return redirect('warehouse:export_list')
-
         service = ExportReceiptService()
         success, msg = service.approve_receipt(pk, request.user)
         if success:
@@ -307,12 +286,8 @@ class ExportReceiptApproveView(LoginRequiredMixin, View):
 
 
 class ExportReceiptRejectView(LoginRequiredMixin, View):
-    """Kế toán từ chối phiếu"""
+    """Tất cả role đều từ chối được"""
     def post(self, request, pk):
-        if request.user.role not in ('KE_TOAN', 'ADMIN'):
-            messages.error(request, 'Bạn không có quyền từ chối phiếu.')
-            return redirect('warehouse:export_list')
-
         service = ExportReceiptService()
         rejection_note = request.POST.get('rejection_note', '')
         success, msg = service.reject_receipt(pk, request.user, rejection_note)
@@ -324,7 +299,7 @@ class ExportReceiptRejectView(LoginRequiredMixin, View):
 
 
 class ExportReceiptResubmitView(LoginRequiredMixin, View):
-    """Thủ kho sửa lại phiếu bị từ chối và gửi lại"""
+    """KHO, ADMIN sửa & gửi lại phiếu bị từ chối"""
     def post(self, request, pk):
         if request.user.role not in ('KHO', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền gửi lại phiếu.')
@@ -336,7 +311,7 @@ class ExportReceiptResubmitView(LoginRequiredMixin, View):
 
         receipt, error = service.resubmit_receipt(pk, note, items_data, request.user)
         if receipt:
-            messages.success(request, f'Đã gửi lại phiếu {receipt.receipt_code}. Đang chờ kế toán duyệt.')
+            messages.success(request, f'Đã gửi lại phiếu {receipt.receipt_code}. Chờ duyệt.')
         else:
             messages.error(request, error)
         return redirect('warehouse:export_list')

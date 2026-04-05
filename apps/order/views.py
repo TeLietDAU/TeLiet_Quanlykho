@@ -50,7 +50,6 @@ def _parse_items_from_post(post_data):
 
 
 def _get_sales_order_stats():
-    """Lấy thống kê đơn hàng"""
     today = timezone.now().date()
     return {
         'total_orders': SalesOrder.objects.count(),
@@ -61,7 +60,6 @@ def _get_sales_order_stats():
 
 
 def _get_debt_stats():
-    """Lấy thống kê công nợ"""
     today = timezone.now().date()
     return {
         'total_orders': SalesOrder.objects.count(),
@@ -72,7 +70,7 @@ def _get_debt_stats():
 
 
 class SalesOrderListView(LoginRequiredMixin, View):
-    """Danh sách đơn hàng — Sale tạo, mọi người xem"""
+    """Danh sách đơn hàng"""
 
     def get(self, request):
         service = SalesOrderService()
@@ -92,7 +90,6 @@ class SalesOrderListView(LoginRequiredMixin, View):
             orders = orders.filter(status=status_filter)
 
         if search_query:
-            from django.db.models import Q
             orders = orders.filter(
                 Q(customer_name__icontains=search_query) |
                 Q(order_code__icontains=search_query)
@@ -102,7 +99,10 @@ class SalesOrderListView(LoginRequiredMixin, View):
         stocks_data = _stocks_json()
         stats = _get_sales_order_stats()
 
-        return render(request, 'order/sales_order_list.html', {  # ← đúng path
+        # Tính valid transitions để template biết nút nào disable
+        valid_transitions = SalesOrderService.VALID_TRANSITIONS
+
+        return render(request, 'order/sales_order_list.html', {
             'orders': orders,
             'products_json': json.dumps(products_data, ensure_ascii=False),
             'stocks_json': json.dumps(stocks_data),
@@ -110,11 +110,42 @@ class SalesOrderListView(LoginRequiredMixin, View):
             'status_filter': status_filter,
             'search_query': search_query,
             'stats': stats,
+            'valid_transitions_json': json.dumps(valid_transitions),
         })
 
     def post(self, request):
-        """Sale tạo đơn hàng"""
-        if request.user.role not in ('SALE', 'ADMIN'):
+        user = request.user
+        action = request.POST.get('action', '')
+
+        # --- Cập nhật trạng thái đơn hàng ---
+        if action == 'update_status':
+            # Mọi role trừ SALE đều cập nhật được trạng thái
+            if user.role == 'SALE':
+                messages.error(request, 'Bạn không có quyền cập nhật trạng thái đơn hàng.')
+                return redirect('order:sales_list')
+
+            order_id = request.POST.get('order_id')
+            new_status = request.POST.get('status')
+
+            allowed_statuses = ['CONFIRMED', 'WAITING', 'DONE', 'CANCELLED']
+            if new_status not in allowed_statuses:
+                messages.error(request, 'Trạng thái không hợp lệ.')
+                return redirect('order:sales_list')
+
+            service = SalesOrderService()
+            # Truyền updated_by để tạo phiếu xuất khi cần
+            success, msg = service.update_status(order_id, new_status, updated_by=user)
+            if success:
+                if new_status == 'WAITING':
+                    messages.success(request, f'{msg} Phiếu xuất kho đã được tạo tự động và đang chờ duyệt.')
+                else:
+                    messages.success(request, msg)
+            else:
+                messages.error(request, msg)
+            return redirect('order:sales_list')
+
+        # --- Sale tạo đơn hàng ---
+        if user.role not in ('SALE', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền tạo đơn hàng.')
             return redirect('order:sales_list')
 
@@ -124,7 +155,7 @@ class SalesOrderListView(LoginRequiredMixin, View):
         note = request.POST.get('note', '')
         items_data = _parse_items_from_post(request.POST)
 
-        order, errors = service.create_order(customer_name, customer_phone, note, items_data, request.user)
+        order, errors = service.create_order(customer_name, customer_phone, note, items_data, user)
 
         if order:
             messages.success(request, f'Đơn hàng {order.order_code} đã được tạo. Tồn kho đã được trừ tự động.')
@@ -143,9 +174,10 @@ class SalesOrderDetailView(LoginRequiredMixin, View):
             messages.error(request, 'Không tìm thấy đơn hàng.')
             return redirect('order:sales_list')
 
-        return render(request, 'order/sales_order_detail.html', {  # ← đúng path
+        return render(request, 'order/sales_order_detail.html', {
             'order': order,
             'user_role': request.user.role,
+            'valid_transitions': SalesOrderService.VALID_TRANSITIONS.get(order.status, []),
         })
 
 
@@ -158,7 +190,7 @@ class CustomerDebtListView(LoginRequiredMixin, View):
         debts = service.get_all(status=status_filter or None, search=search or None)
         stats = _get_debt_stats()
 
-        return render(request, 'order/customer_debt_list.html', {  # ← đúng path
+        return render(request, 'order/customer_debt_list.html', {
             'debts': debts,
             'status_filter': status_filter,
             'search_query': search,
@@ -167,7 +199,6 @@ class CustomerDebtListView(LoginRequiredMixin, View):
         })
 
     def post(self, request):
-        """Đánh dấu công nợ đã thanh toán"""
         if request.user.role not in ('KE_TOAN', 'ADMIN'):
             messages.error(request, 'Bạn không có quyền cập nhật công nợ.')
             return redirect('order:debt_list')
