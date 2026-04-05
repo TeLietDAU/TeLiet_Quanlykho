@@ -9,7 +9,7 @@
 .status-badge.CONFIRMED{background:rgba(59,130,246,.12);color:var(--info);}
 .status-badge.WAITING{background:rgba(245,158,11,.12);color:var(--warning);}
 .status-badge.DONE{background:rgba(34,197,94,.12);color:var(--success);}
-.status-badge.CANCELLED{background:rgba(107,114,128,.12);color:var(--muted);}
+.status-badge.CANCELLED{background:rgba(239,68,68,.12);color:var(--danger);}
 .filter-tabs{display:flex;gap:8px;flex-wrap:wrap;}
 .filter-tab{padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted2);text-decoration:none;transition:all .15s;}
 .filter-tab:hover,.filter-tab.active{background:rgba(232,164,39,.12);border-color:rgba(232,164,39,.3);color:var(--accent);}
@@ -22,18 +22,18 @@
 .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
 .stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;}
+.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:Google Sans Flex,sans-serif;}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
 .modal-backdrop.open{opacity:1;pointer-events:all;}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:760px;padding:28px;transform:translateY(16px);transition:transform .2s;max-height:90vh;overflow-y:auto;}
 .modal-backdrop.open .modal{transform:translateY(0);}
 .modal-sm{max-width:480px;}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);}
+.modal-title{font-family:Google Sans Flex,sans-serif;font-size:18px;font-weight:700;color:var(--text);}
 .modal-close{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted2);}
 .field{margin-bottom:16px;}
 .field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
-.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:Google Sans Flex,sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
 .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
@@ -76,10 +76,10 @@
 
 <!-- Stats -->
 <div class="stats-bar">
-  <div class="stat-card"><div class="stat-label">Tổng Đơn Hàng</div><div class="stat-value">{{ stats.total_orders }}</div></div>
-  <div class="stat-card"><div class="stat-label">Chờ Lấy Hàng</div><div class="stat-value">{{ stats.pending_orders }}</div></div>
-  <div class="stat-card"><div class="stat-label">Tổng Số SP</div><div class="stat-value">{{ stats.total_items }}</div></div>
-  <div class="stat-card"><div class="stat-label">Giao Dịch Hôm Nay</div><div class="stat-value">{{ stats.today_transactions }}</div></div>
+  <div class="stat-card"><div class="stat-label">Tổng Đơn Hàng</div><div class="stat-value">{{ stats.total_orders|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Chờ Lấy Hàng</div><div class="stat-value">{{ stats.pending_orders|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Tổng Số SP</div><div class="stat-value">{{ stats.total_items|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Giao Dịch Hôm Nay</div><div class="stat-value">{{ stats.today_transactions|floatformat:0 }}</div></div>
 </div>
 
 <!-- Filter + Search -->
@@ -108,6 +108,30 @@
   <input type="hidden" name="order_id" id="status-order-id">
   <input type="hidden" name="status" id="status-value">
 </form>
+
+<!-- Modal: Xác nhận cập nhật trạng thái -->
+<div class="modal-backdrop" id="modal-confirm-status">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">Xác nhận cập nhật</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-confirm-status')">✕</button>
+    </div>
+    <div style="margin-bottom:24px;">
+      <p id="confirm-message" style="font-size:14px;color:var(--text);line-height:1.6;"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-confirm-status')">
+        Hủy
+      </button>
+      <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Duyệt
+      </button>
+    </div>
+  </div>
+</div>
 
 <div class="card">
   <table>
@@ -144,7 +168,7 @@
             </button>
             <button type="button" class="status-btn cancel"
               onclick="updateStatus('{{ order.pk }}', 'CANCELLED', '{{ order.order_code }}')">
-              ❌ Hủy
+              ✗ Hủy
             </button>
           </div>
 
@@ -157,7 +181,7 @@
           <span style="font-size:11px;color:var(--success);">✓ Hoàn thành</span>
 
           {% elif order.status == 'CANCELLED' %}
-          <span style="font-size:11px;color:var(--muted);">Đã hủy</span>
+          <span style="font-size:11px;color:var(--danger);">✗ Đã hủy</span>
 
           {% endif %}
         </td>
@@ -245,16 +269,28 @@ const PRODUCTS = {{ products_json|safe }};
 const STOCKS   = {{ stocks_json|safe }};
 let orderCount = 0;
 
-// Cập nhật trạng thái đơn hàng — kiểm tra luồng hợp lệ ở client
+// Cập nhật trạng thái đơn hàng — mở modal xác nhận
 function updateStatus(orderId, status, orderCode) {
-  const labels = {
+  const descriptions = {
     WAITING: 'Chờ lấy hàng (sẽ tạo phiếu xuất kho tự động)',
     DONE: 'Hoàn thành',
     CANCELLED: 'Hủy đơn'
   };
-  if (!confirm(`Chuyển đơn ${orderCode} sang: "${labels[status] || status}"?`)) return;
+  
+  // Lưu thông tin vào hidden inputs
   document.getElementById('status-order-id').value = orderId;
   document.getElementById('status-value').value = status;
+  
+  // Cập nhật nội dung modal
+  const message = `Duyệt phiếu <strong>${orderCode}</strong>? Tồn kho sẽ được cập nhật ngay lập tức.`;
+  document.getElementById('confirm-message').innerHTML = message;
+  
+  // Mở modal xác nhận
+  document.getElementById('modal-confirm-status').classList.add('open');
+}
+
+// Submit form cập nhật trạng thái từ modal
+function submitStatusUpdate() {
   document.getElementById('status-update-form').submit();
 }
 

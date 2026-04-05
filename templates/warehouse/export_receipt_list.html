@@ -23,18 +23,18 @@
 .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
 .stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;}
+.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:Google Sans Flex,sans-serif;}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
 .modal-backdrop.open{opacity:1;pointer-events:all;}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:720px;padding:28px;transform:translateY(16px);transition:transform .2s;max-height:90vh;overflow-y:auto;}
 .modal-backdrop.open .modal{transform:translateY(0);}
 .modal-sm{max-width:420px;}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);}
+.modal-title{font-family:Google Sans Flex,sans-serif;font-size:18px;font-weight:700;color:var(--text);}
 .modal-close{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted2);}
 .field{margin-bottom:16px;}
 .field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
-.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:Google Sans Flex,sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
 .field textarea{min-height:80px;resize:vertical;}
 .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
@@ -81,19 +81,19 @@
 <div class="stats-bar">
   <div class="stat-card">
     <div class="stat-label">Tổng Phiếu</div>
-    <div class="stat-value">{{ stats.total_receipts }}</div>
+    <div class="stat-value">{{ stats.total_receipts|floatformat:0 }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Phiếu Chờ Duyệt</div>
-    <div class="stat-value">{{ stats.pending_receipts }}</div>
+    <div class="stat-value">{{ stats.pending_receipts|floatformat:0 }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Tổng Số SP</div>
-    <div class="stat-value">{{ stats.total_items }}</div>
+    <div class="stat-value">{{ stats.total_items|floatformat:0 }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Giao Dịch Hôm Nay</div>
-    <div class="stat-value">{{ stats.today_transactions }}</div>
+    <div class="stat-value">{{ stats.today_transactions|floatformat:0 }}</div>
   </div>
 </div>
 

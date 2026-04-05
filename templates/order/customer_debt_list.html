@@ -22,7 +22,7 @@
 .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
 .stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;}
+.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:Google Sans Flex,sans-serif;}
 .toast-container{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;gap:10px;}
 .toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateX(80px);opacity:0;transition:all .3s;min-width:260px;}
 .toast.show{transform:translateX(0);opacity:1;}
@@ -42,11 +42,11 @@
 <div class="stats-bar">
   <div class="stat-card">
     <div class="stat-label">Tổng Đơn Hàng</div>
-    <div class="stat-value">{{ stats.total_orders }}</div>
+    <div class="stat-value">{{ stats.total_orders|floatformat:0 }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Đơn Chờ Xử Lý</div>
-    <div class="stat-value">{{ stats.pending_orders }}</div>
+    <div class="stat-value">{{ stats.pending_orders|floatformat:0 }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Tổng Nợ</div>
@@ -54,7 +54,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-label">Giao Dịch Hôm Nay</div>
-    <div class="stat-value">{{ stats.today_transactions }}</div>
+    <div class="stat-value">{{ stats.today_transactions|floatformat:0 }}</div>
   </div>
 </div>
 

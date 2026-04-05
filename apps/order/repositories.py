@@ -94,22 +94,48 @@ class SalesOrderRepository:
                 unit_price=item.get('unit_price', 0),
             ))
 
-            # Trừ kho ngay
-            from apps.warehouse.models import ProductStock
-            stock, _ = ProductStock.objects.get_or_create(
-                product_id=item['product_id'],
-                defaults={'quantity': 0}
-            )
-            stock.quantity -= Decimal(str(item['quantity']))
-            stock.save()
+            # KHÔNG trừ kho ngay - chỉ trừ khi phiếu xuất được duyệt
+            # Stock sẽ tự động được trừ khi ExportReceipt.approve()
+            # from apps.warehouse.models import ProductStock
+            # stock, _ = ProductStock.objects.get_or_create(
+            #     product_id=item['product_id'],
+            #     defaults={'quantity': 0}
+            # )
+            # stock.quantity -= Decimal(str(item['quantity']))
+            # stock.save()
 
         SalesOrderItem.objects.bulk_create(item_instances)
         return order, None
 
     @staticmethod
+    @transaction.atomic
     def update_status(order, status):
+        """Cập nhật trạng thái đơn - nếu hủy + phiếu đã duyệt thì hoàn hàng"""
+        old_status = order.status
         order.status = status
         order.save(update_fields=['status'])
+
+        # Nếu chuyển sang CANCELLED → hoàn hàng CHỈ nếu phiếu xuất đã duyệt
+        if status == 'CANCELLED':
+            from apps.warehouse.models import ExportReceipt
+            # Tìm phiếu xuất liên quan
+            for receipt in ExportReceipt.objects.filter(note__icontains=order.order_code):
+                # Chỉ hoàn khi phiếu đã được duyệt (stock đã bị trừ)
+                if receipt.status == 'APPROVED':
+                    # Hoàn các sản phẩm từ phiếu xuất
+                    from apps.warehouse.models import ProductStock
+                    for item in receipt.items.all():
+                        stock, _ = ProductStock.objects.get_or_create(
+                            product=item.product,
+                            defaults={'quantity': 0}
+                        )
+                        stock.quantity += item.quantity
+                        stock.save()
+                    # Đổi trạng thái phiếu sang REJECTED (đã hoàn hàng)
+                    receipt.status = 'REJECTED'
+                    receipt.rejection_note = f'Hoàn hàng do hủy đơn {order.order_code}'
+                    receipt.save()
+
         return order
 
 

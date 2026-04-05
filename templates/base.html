@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TeLiet System{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --bg: #0e0f11;
@@ -28,7 +29,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: var(--bg);
-            font-family: 'DM Sans', sans-serif;
+            font-family: Google Sans Flex, sans-serif;
             color: var(--text);
             min-height: 100vh;
             display: flex;
@@ -50,6 +51,10 @@
             padding: 24px 20px;
             border-bottom: 1px solid var(--border);
             display: flex; align-items: center; gap: 10px;
+            transition: background-color 0.15s;
+        }
+        .sidebar-brand:hover {
+            background-color: var(--surface);
         }
         .brand-icon {
             width: 32px; height: 32px;
@@ -57,7 +62,7 @@
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
             flex-shrink: 0;
         }
-        .brand-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; color: var(--text); }
+        .brand-text { font-family: Google Sans Flex, sans-serif; font-weight: 800; font-size: 20px; color: var(--text); }
         .brand-text span { color: var(--accent); }
         .sidebar-section { padding: 20px 12px 8px; }
         .section-label {
@@ -119,7 +124,7 @@
             background: var(--accent);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-family: 'Syne', sans-serif;
+            font-family: Google Sans Flex, sans-serif;
             font-weight: 800;
             font-size: 13px;
             color: #0e0f11;
@@ -176,13 +181,13 @@
             display: flex; align-items: flex-start; justify-content: space-between;
             margin-bottom: 28px;
         }
-        .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+        .page-title { font-family: Google Sans Flex, sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
         .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
         .btn {
             display: inline-flex; align-items: center; gap: 7px;
             padding: 9px 18px;
             border-radius: 8px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: Google Sans Flex, sans-serif;
             font-size: 13px; font-weight: 600;
             cursor: pointer; border: none;
             transition: all 0.15s;
@@ -197,11 +202,11 @@
         /* ===== CARD & TABLE ===== */
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
         .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+        .card-title { font-family: Google Sans Flex, sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
         .card-actions { display: flex; gap: 8px; }
         .search-wrap { position: relative; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 13px; height: 13px; pointer-events: none; }
-        .search-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px 8px 32px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text); outline: none; width: 220px; transition: border-color 0.15s; }
+        .search-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px 8px 32px; font-family: Google Sans Flex, sans-serif; font-size: 12px; color: var(--text); outline: none; width: 220px; transition: border-color 0.15s; }
         .search-input::placeholder { color: var(--muted); }
         .search-input:focus { border-color: var(--accent); }
         table { width: 100%; border-collapse: collapse; }
@@ -230,10 +235,10 @@
 <body>
     <!-- SIDEBAR -->
     <aside class="sidebar">
-        <div class="sidebar-brand">
+        <a href="{% url 'dashboard' %}" class="sidebar-brand" style="text-decoration: none; cursor: pointer;">
             <div class="brand-icon"></div>
             <span class="brand-text">Te<span>Liet</span></span>
-        </div>
+        </a>
 
         <div class="sidebar-section">
             <div class="section-label">Tổng quan</div>

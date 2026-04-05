@@ -38,7 +38,7 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
             category=category_id if category_id else None
         )
 
-        paginator = Paginator(queryset, 10)
+        paginator = Paginator(queryset, 5)
         page_obj = paginator.get_page(trang_hien_tai)
 
         # Lấy tồn kho để hiển thị trạng thái đúng
