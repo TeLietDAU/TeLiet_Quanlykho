@@ -82,7 +82,7 @@ CREATE TABLE `auth_permission` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `auth_permission_content_type_id_codename_01ab375a_uniq` (`content_type_id`,`codename`),
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -91,7 +91,7 @@ CREATE TABLE `auth_permission` (
 
 LOCK TABLES `auth_permission` WRITE;
 /*!40000 ALTER TABLE `auth_permission` DISABLE KEYS */;
-INSERT INTO `auth_permission` VALUES (1,'Can add log entry',1,'add_logentry'),(2,'Can change log entry',1,'change_logentry'),(3,'Can delete log entry',1,'delete_logentry'),(4,'Can view log entry',1,'view_logentry'),(5,'Can add permission',3,'add_permission'),(6,'Can change permission',3,'change_permission'),(7,'Can delete permission',3,'delete_permission'),(8,'Can view permission',3,'view_permission'),(9,'Can add group',2,'add_group'),(10,'Can change group',2,'change_group'),(11,'Can delete group',2,'delete_group'),(12,'Can view group',2,'view_group'),(13,'Can add content type',4,'add_contenttype'),(14,'Can change content type',4,'change_contenttype'),(15,'Can delete content type',4,'delete_contenttype'),(16,'Can view content type',4,'view_contenttype'),(17,'Can add session',5,'add_session'),(18,'Can change session',5,'change_session'),(19,'Can delete session',5,'delete_session'),(20,'Can view session',5,'view_session'),(21,'Can add category',6,'add_category'),(22,'Can change category',6,'change_category'),(23,'Can delete category',6,'delete_category'),(24,'Can view category',6,'view_category'),(25,'Can add product',7,'add_product'),(26,'Can change product',7,'change_product'),(27,'Can delete product',7,'delete_product'),(28,'Can view product',7,'view_product'),(29,'Can add product unit',8,'add_productunit'),(30,'Can change product unit',8,'change_productunit'),(31,'Can delete product unit',8,'delete_productunit'),(32,'Can view product unit',8,'view_productunit'),(33,'Can add user',9,'add_user'),(34,'Can change user',9,'change_user'),(35,'Can delete user',9,'delete_user'),(36,'Can view user',9,'view_user'),(37,'Can add warehouse transaction',16,'add_warehousetransaction'),(38,'Can change warehouse transaction',16,'change_warehousetransaction'),(39,'Can delete warehouse transaction',16,'delete_warehousetransaction'),(40,'Can view warehouse transaction',16,'view_warehousetransaction'),(41,'Can add inventory',12,'add_inventory'),(42,'Can change inventory',12,'change_inventory'),(43,'Can delete inventory',12,'delete_inventory'),(44,'Can view inventory',12,'view_inventory'),(45,'Can add sales order',13,'add_salesorder'),(46,'Can change sales order',13,'change_salesorder'),(47,'Can delete sales order',13,'delete_salesorder'),(48,'Can view sales order',13,'view_salesorder'),(49,'Can add warehouse',15,'add_warehouse'),(50,'Can change warehouse',15,'change_warehouse'),(51,'Can delete warehouse',15,'delete_warehouse'),(52,'Can view warehouse',15,'view_warehouse'),(53,'Can add system log',14,'add_systemlog'),(54,'Can change system log',14,'change_systemlog'),(55,'Can delete system log',14,'delete_systemlog'),(56,'Can view system log',14,'view_systemlog'),(57,'Can add export log',11,'add_exportlog'),(58,'Can change export log',11,'change_exportlog'),(59,'Can delete export log',11,'delete_exportlog'),(60,'Can view export log',11,'view_exportlog'),(61,'Can add customer debt',10,'add_customerdebt'),(62,'Can change customer debt',10,'change_customerdebt'),(63,'Can delete customer debt',10,'delete_customerdebt'),(64,'Can view customer debt',10,'view_customerdebt');
+INSERT INTO `auth_permission` VALUES (1,'Can add log entry',1,'add_logentry'),(2,'Can change log entry',1,'change_logentry'),(3,'Can delete log entry',1,'delete_logentry'),(4,'Can view log entry',1,'view_logentry'),(5,'Can add permission',3,'add_permission'),(6,'Can change permission',3,'change_permission'),(7,'Can delete permission',3,'delete_permission'),(8,'Can view permission',3,'view_permission'),(9,'Can add group',2,'add_group'),(10,'Can change group',2,'change_group'),(11,'Can delete group',2,'delete_group'),(12,'Can view group',2,'view_group'),(13,'Can add content type',4,'add_contenttype'),(14,'Can change content type',4,'change_contenttype'),(15,'Can delete content type',4,'delete_contenttype'),(16,'Can view content type',4,'view_contenttype'),(17,'Can add session',5,'add_session'),(18,'Can change session',5,'change_session'),(19,'Can delete session',5,'delete_session'),(20,'Can view session',5,'view_session'),(21,'Can add category',6,'add_category'),(22,'Can change category',6,'change_category'),(23,'Can delete category',6,'delete_category'),(24,'Can view category',6,'view_category'),(25,'Can add product',7,'add_product'),(26,'Can change product',7,'change_product'),(27,'Can delete product',7,'delete_product'),(28,'Can view product',7,'view_product'),(29,'Can add product unit',8,'add_productunit'),(30,'Can change product unit',8,'change_productunit'),(31,'Can delete product unit',8,'delete_productunit'),(32,'Can view product unit',8,'view_productunit'),(33,'Can add user',9,'add_user'),(34,'Can change user',9,'change_user'),(35,'Can delete user',9,'delete_user'),(36,'Can view user',9,'view_user'),(37,'Can add warehouse transaction',16,'add_warehousetransaction'),(38,'Can change warehouse transaction',16,'change_warehousetransaction'),(39,'Can delete warehouse transaction',16,'delete_warehousetransaction'),(40,'Can view warehouse transaction',16,'view_warehousetransaction'),(41,'Can add inventory',12,'add_inventory'),(42,'Can change inventory',12,'change_inventory'),(43,'Can delete inventory',12,'delete_inventory'),(44,'Can view inventory',12,'view_inventory'),(45,'Can add sales order',13,'add_salesorder'),(46,'Can change sales order',13,'change_salesorder'),(47,'Can delete sales order',13,'delete_salesorder'),(48,'Can view sales order',13,'view_salesorder'),(49,'Can add warehouse',15,'add_warehouse'),(50,'Can change warehouse',15,'change_warehouse'),(51,'Can delete warehouse',15,'delete_warehouse'),(52,'Can view warehouse',15,'view_warehouse'),(53,'Can add system log',14,'add_systemlog'),(54,'Can change system log',14,'change_systemlog'),(55,'Can delete system log',14,'delete_systemlog'),(56,'Can view system log',14,'view_systemlog'),(57,'Can add export log',11,'add_exportlog'),(58,'Can change export log',11,'change_exportlog'),(59,'Can delete export log',11,'delete_exportlog'),(60,'Can view export log',11,'view_exportlog'),(61,'Can add customer debt',10,'add_customerdebt'),(62,'Can change customer debt',10,'change_customerdebt'),(63,'Can delete customer debt',10,'delete_customerdebt'),(64,'Can view customer debt',10,'view_customerdebt'),(65,'Can add Blacklisted Token',17,'add_blacklistedtoken'),(66,'Can change Blacklisted Token',17,'change_blacklistedtoken'),(67,'Can delete Blacklisted Token',17,'delete_blacklistedtoken'),(68,'Can view Blacklisted Token',17,'view_blacklistedtoken'),(69,'Can add Outstanding Token',18,'add_outstandingtoken'),(70,'Can change Outstanding Token',18,'change_outstandingtoken'),(71,'Can delete Outstanding Token',18,'delete_outstandingtoken'),(72,'Can view Outstanding Token',18,'view_outstandingtoken');
 /*!40000 ALTER TABLE `auth_permission` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -118,36 +118,6 @@ LOCK TABLES `categories` WRITE;
 /*!40000 ALTER TABLE `categories` DISABLE KEYS */;
 INSERT INTO `categories` VALUES ('02000000000000000000000000000003','Cát & Sỏi'),('02000000000000000000000000000010','Đinh vít & Bu lông'),('02000000000000000000000000000002','Gạch & Đá'),('02000000000000000000000000000008','Gỗ & Ván ép'),('02000000000000000000000000000005','Ống nhựa & Phụ kiện'),('02000000000000000000000000000004','Sắt thép xây dựng'),('02000000000000000000000000000006','Sơn & Chống thấm'),('02000000000000000000000000000007','Tấm lợp & Mái'),('02000000000000000000000000000009','Vật liệu cách nhiệt'),('02000000000000000000000000000001','Xi măng & Vữa');
 /*!40000 ALTER TABLE `categories` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `customer_debts`
---
-
-DROP TABLE IF EXISTS `customer_debts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `customer_debts` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `customer_name` varchar(100) NOT NULL,
-  `remaining_amount` decimal(15,2) NOT NULL,
-  `due_date` datetime(6) DEFAULT NULL,
-  `status` varchar(20) NOT NULL,
-  `sales_order_id` bigint NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `customer_debts_sales_order_id_a8616e92_fk_sales_orders_id` (`sales_order_id`),
-  CONSTRAINT `customer_debts_sales_order_id_a8616e92_fk_sales_orders_id` FOREIGN KEY (`sales_order_id`) REFERENCES `sales_orders` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `customer_debts`
---
-
-LOCK TABLES `customer_debts` WRITE;
-/*!40000 ALTER TABLE `customer_debts` DISABLE KEYS */;
-INSERT INTO `customer_debts` VALUES (1,'Hộ kinh doanh Nguyễn Thành Đạt',8900000.00,'2025-04-03 00:00:00.000000','Pending',4),(2,'Công ty TNHH TM Đại Phú',22200000.00,'2025-04-14 00:00:00.000000','Pending',5),(3,'Ban quản lý dự án KDC Tân Phú',45000000.00,'2025-05-25 00:00:00.000000','Pending',6),(4,'Công ty TNHH Xây Dựng Hoàng Gia',15300000.00,'2025-04-30 00:00:00.000000','Pending',7),(5,'Công ty CP Đầu Tư XD Tân Long',75000000.00,'2025-06-20 00:00:00.000000','Pending',10);
-/*!40000 ALTER TABLE `customer_debts` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -197,7 +167,7 @@ CREATE TABLE `django_content_type` (
   `model` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -206,7 +176,7 @@ CREATE TABLE `django_content_type` (
 
 LOCK TABLES `django_content_type` WRITE;
 /*!40000 ALTER TABLE `django_content_type` DISABLE KEYS */;
-INSERT INTO `django_content_type` VALUES (1,'admin','logentry'),(2,'auth','group'),(3,'auth','permission'),(9,'authentication','user'),(4,'contenttypes','contenttype'),(6,'product','category'),(10,'product','customerdebt'),(11,'product','exportlog'),(12,'product','inventory'),(7,'product','product'),(8,'product','productunit'),(13,'product','salesorder'),(14,'product','systemlog'),(15,'product','warehouse'),(16,'product','warehousetransaction'),(5,'sessions','session');
+INSERT INTO `django_content_type` VALUES (1,'admin','logentry'),(2,'auth','group'),(3,'auth','permission'),(9,'authentication','user'),(4,'contenttypes','contenttype'),(6,'product','category'),(10,'product','customerdebt'),(11,'product','exportlog'),(12,'product','inventory'),(7,'product','product'),(8,'product','productunit'),(13,'product','salesorder'),(14,'product','systemlog'),(15,'product','warehouse'),(16,'product','warehousetransaction'),(5,'sessions','session'),(17,'token_blacklist','blacklistedtoken'),(18,'token_blacklist','outstandingtoken');
 /*!40000 ALTER TABLE `django_content_type` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -223,7 +193,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -232,7 +202,7 @@ CREATE TABLE `django_migrations` (
 
 LOCK TABLES `django_migrations` WRITE;
 /*!40000 ALTER TABLE `django_migrations` DISABLE KEYS */;
-INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2026-03-23 07:39:45.101094'),(2,'contenttypes','0002_remove_content_type_name','2026-03-23 07:39:45.246313'),(3,'auth','0001_initial','2026-03-23 07:39:45.866918'),(4,'auth','0002_alter_permission_name_max_length','2026-03-23 07:39:45.965114'),(5,'auth','0003_alter_user_email_max_length','2026-03-23 07:39:45.974471'),(6,'auth','0004_alter_user_username_opts','2026-03-23 07:39:45.981492'),(7,'auth','0005_alter_user_last_login_null','2026-03-23 07:39:45.988828'),(8,'auth','0006_require_contenttypes_0002','2026-03-23 07:39:45.993822'),(9,'auth','0007_alter_validators_add_error_messages','2026-03-23 07:39:46.000798'),(10,'auth','0008_alter_user_username_max_length','2026-03-23 07:39:46.007906'),(11,'auth','0009_alter_user_last_name_max_length','2026-03-23 07:39:46.015109'),(12,'auth','0010_alter_group_name_max_length','2026-03-23 07:39:46.030855'),(13,'auth','0011_update_proxy_permissions','2026-03-23 07:39:46.037147'),(14,'auth','0012_alter_user_first_name_max_length','2026-03-23 07:39:46.044047'),(15,'authentication','0001_initial','2026-03-23 07:39:46.637343'),(16,'admin','0001_initial','2026-03-23 07:39:46.884249'),(17,'admin','0002_logentry_remove_auto_add','2026-03-23 07:39:46.901772'),(18,'admin','0003_logentry_add_action_flag_choices','2026-03-23 07:39:46.910695'),(19,'product','0001_initial','2026-03-23 07:39:47.237996'),(20,'sessions','0001_initial','2026-03-23 07:39:47.296813'),(21,'product','0002_warehouse_exportlog_salesorder_customerdebt_and_more','2026-03-23 07:51:14.177832');
+INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2026-03-23 07:39:45.101094'),(2,'contenttypes','0002_remove_content_type_name','2026-03-23 07:39:45.246313'),(3,'auth','0001_initial','2026-03-23 07:39:45.866918'),(4,'auth','0002_alter_permission_name_max_length','2026-03-23 07:39:45.965114'),(5,'auth','0003_alter_user_email_max_length','2026-03-23 07:39:45.974471'),(6,'auth','0004_alter_user_username_opts','2026-03-23 07:39:45.981492'),(7,'auth','0005_alter_user_last_login_null','2026-03-23 07:39:45.988828'),(8,'auth','0006_require_contenttypes_0002','2026-03-23 07:39:45.993822'),(9,'auth','0007_alter_validators_add_error_messages','2026-03-23 07:39:46.000798'),(10,'auth','0008_alter_user_username_max_length','2026-03-23 07:39:46.007906'),(11,'auth','0009_alter_user_last_name_max_length','2026-03-23 07:39:46.015109'),(12,'auth','0010_alter_group_name_max_length','2026-03-23 07:39:46.030855'),(13,'auth','0011_update_proxy_permissions','2026-03-23 07:39:46.037147'),(14,'auth','0012_alter_user_first_name_max_length','2026-03-23 07:39:46.044047'),(15,'authentication','0001_initial','2026-03-23 07:39:46.637343'),(16,'admin','0001_initial','2026-03-23 07:39:46.884249'),(17,'admin','0002_logentry_remove_auto_add','2026-03-23 07:39:46.901772'),(18,'admin','0003_logentry_add_action_flag_choices','2026-03-23 07:39:46.910695'),(19,'product','0001_initial','2026-03-23 07:39:47.237996'),(20,'sessions','0001_initial','2026-03-23 07:39:47.296813'),(21,'product','0002_warehouse_exportlog_salesorder_customerdebt_and_more','2026-03-23 07:51:14.177832'),(22,'product','0002_remove_exportlog_user_and_more','2026-04-06 03:01:33.618459'),(23,'token_blacklist','0001_initial','2026-04-06 03:01:33.923635'),(24,'token_blacklist','0002_outstandingtoken_jti_hex','2026-04-06 03:01:34.012718'),(25,'token_blacklist','0003_auto_20171017_2007','2026-04-06 03:01:34.029049'),(26,'token_blacklist','0004_auto_20171017_2013','2026-04-06 03:01:34.149225'),(27,'token_blacklist','0005_remove_outstandingtoken_jti','2026-04-06 03:01:34.234609'),(28,'token_blacklist','0006_auto_20171017_2113','2026-04-06 03:01:34.269839'),(29,'token_blacklist','0007_auto_20171017_2214','2026-04-06 03:01:34.574716'),(30,'token_blacklist','0008_migrate_to_bigautofield','2026-04-06 03:01:35.006040'),(31,'token_blacklist','0010_fix_migrate_to_bigautofield','2026-04-06 03:01:35.018538'),(32,'token_blacklist','0011_linearizes_history','2026-04-06 03:01:35.024010'),(33,'token_blacklist','0012_alter_outstandingtoken_user','2026-04-06 03:01:35.034786'),(34,'token_blacklist','0013_alter_blacklistedtoken_options_and_more','2026-04-06 03:01:35.047618');
 /*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -260,68 +230,6 @@ LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
 INSERT INTO `django_session` VALUES ('apqfxjr8z9xrjdizft12kycli1sl0f2v','.eJxVjjsOwjAQBe_iGlte2xtjSnrOEK29axJAiZRPhbg7iZQC6jczem_V0rp07TrL1PasLipZayk51BE56UBN0lRYNKSKOeIZQgF1-tUylacMu8sPGu6jKeOwTH02O2KOdTa3keV1Pdi_QEdzt9leoAJECWQlbCcKBG6qiwlrDhXRlmgJ2KGvGF0qxAExOy8ZofHeq88Xqo1APw:1w6Rcj:T98F0yC38yKBhdho_cGRyvK0emNbLezPmc__-E7r2bw','2026-04-11 11:14:37.388088');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `export_logs`
---
-
-DROP TABLE IF EXISTS `export_logs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `export_logs` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `report_name` varchar(100) NOT NULL,
-  `format` varchar(10) NOT NULL,
-  `export_time` datetime(6) NOT NULL,
-  `user_id` char(32) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `export_logs_user_id_22e39ef3_fk_users_id` (`user_id`),
-  CONSTRAINT `export_logs_user_id_22e39ef3_fk_users_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `export_logs`
---
-
-LOCK TABLES `export_logs` WRITE;
-/*!40000 ALTER TABLE `export_logs` DISABLE KEYS */;
-INSERT INTO `export_logs` VALUES (1,'Báo cáo tồn kho tháng 1/2025','EXCEL','2025-02-01 09:00:00.000000','01000000000000000000000000000009'),(2,'Báo cáo công nợ khách hàng Q1/2025','PDF','2025-02-01 09:30:00.000000','01000000000000000000000000000010'),(3,'Báo cáo nhập xuất kho tháng 2/2025','EXCEL','2025-03-01 08:45:00.000000','01000000000000000000000000000009'),(4,'Báo cáo doanh thu quý 1/2025','PDF','2025-03-15 14:00:00.000000','01000000000000000000000000000001'),(5,'Báo cáo tổng hợp vật tư tháng 3/2025','EXCEL','2025-03-20 16:30:00.000000','01000000000000000000000000000010');
-/*!40000 ALTER TABLE `export_logs` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `inventories`
---
-
-DROP TABLE IF EXISTS `inventories`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `inventories` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `quantity_on_hand` decimal(15,2) NOT NULL,
-  `quantity_reserved` decimal(15,2) NOT NULL,
-  `min_stock_level` decimal(15,2) NOT NULL,
-  `last_updated` datetime(6) NOT NULL,
-  `product_id` char(32) NOT NULL,
-  `warehouse_id` bigint NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `inventories_product_id_warehouse_id_65722ee0_uniq` (`product_id`,`warehouse_id`),
-  KEY `inventories_warehouse_id_0ec0f009_fk_warehouses_id` (`warehouse_id`),
-  CONSTRAINT `inventories_product_id_a01b0048_fk_products_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
-  CONSTRAINT `inventories_warehouse_id_0ec0f009_fk_warehouses_id` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `inventories`
---
-
-LOCK TABLES `inventories` WRITE;
-/*!40000 ALTER TABLE `inventories` DISABLE KEYS */;
-INSERT INTO `inventories` VALUES (1,850.00,50.00,100.00,'2025-03-20 08:00:00.000000','03000000000000000000000000000001',1),(2,320.00,30.00,50.00,'2025-03-20 08:00:00.000000','03000000000000000000000000000007',1),(3,180.00,20.00,30.00,'2025-03-20 08:00:00.000000','03000000000000000000000000000006',1),(4,1200.00,100.00,200.00,'2025-03-20 08:00:00.000000','03000000000000000000000000000010',1),(5,25000.00,2000.00,5000.00,'2025-03-19 14:00:00.000000','03000000000000000000000000000004',2),(6,120.00,10.00,20.00,'2025-03-19 14:00:00.000000','03000000000000000000000000000015',2),(7,500.00,40.00,80.00,'2025-03-19 14:00:00.000000','03000000000000000000000000000002',2),(8,800.00,60.00,100.00,'2025-03-18 10:00:00.000000','03000000000000000000000000000011',4),(9,350.00,20.00,50.00,'2025-03-18 10:00:00.000000','03000000000000000000000000000012',4),(10,400.00,30.00,60.00,'2025-03-18 10:00:00.000000','03000000000000000000000000000017',4);
-/*!40000 ALTER TABLE `inventories` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -384,66 +292,60 @@ INSERT INTO `products` VALUES ('03000000000000000000000000000001','Xi măng Hà 
 UNLOCK TABLES;
 
 --
--- Table structure for table `sales_orders`
+-- Table structure for table `token_blacklist_blacklistedtoken`
 --
 
-DROP TABLE IF EXISTS `sales_orders`;
+DROP TABLE IF EXISTS `token_blacklist_blacklistedtoken`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sales_orders` (
+CREATE TABLE `token_blacklist_blacklistedtoken` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `order_code` varchar(20) NOT NULL,
-  `customer_name` varchar(100) NOT NULL,
-  `order_date` datetime(6) NOT NULL,
-  `total_amount` decimal(15,2) NOT NULL,
-  `status` varchar(20) NOT NULL,
-  `created_by_id` char(32) NOT NULL,
+  `blacklisted_at` datetime(6) NOT NULL,
+  `token_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `order_code` (`order_code`),
-  KEY `sales_orders_created_by_id_e682ebf4_fk_users_id` (`created_by_id`),
-  CONSTRAINT `sales_orders_created_by_id_e682ebf4_fk_users_id` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sales_orders`
---
-
-LOCK TABLES `sales_orders` WRITE;
-/*!40000 ALTER TABLE `sales_orders` DISABLE KEYS */;
-INSERT INTO `sales_orders` VALUES (1,'DH-2025-0001','Công ty TNHH Xây Dựng Phúc An','2025-01-05 09:00:00.000000',48500000.00,'Completed','01000000000000000000000000000003'),(2,'DH-2025-0002','Công ty CP Xây Dựng Miền Nam','2025-01-12 10:30:00.000000',32700000.00,'Completed','01000000000000000000000000000004'),(3,'DH-2025-0003','Cơ sở Xây Dựng Thanh Bình','2025-01-20 08:45:00.000000',15800000.00,'Completed','01000000000000000000000000000003'),(4,'DH-2025-0004','Hộ kinh doanh Nguyễn Thành Đạt','2025-02-03 14:00:00.000000',28900000.00,'Completed','01000000000000000000000000000005'),(5,'DH-2025-0005','Công ty TNHH TM Đại Phú','2025-02-14 09:30:00.000000',67200000.00,'Completed','01000000000000000000000000000004'),(6,'DH-2025-0006','Ban quản lý dự án KDC Tân Phú','2025-02-25 11:00:00.000000',94500000.00,'Processing','01000000000000000000000000000003'),(7,'DH-2025-0007','Công ty TNHH Xây Dựng Hoàng Gia','2025-03-05 08:00:00.000000',41300000.00,'Processing','01000000000000000000000000000005'),(8,'DH-2025-0008','Cơ sở VLXD Trường Thịnh','2025-03-10 13:00:00.000000',22600000.00,'Pending','01000000000000000000000000000004'),(9,'DH-2025-0009','Hộ kinh doanh Lê Văn Tú','2025-03-15 10:00:00.000000',9800000.00,'Pending','01000000000000000000000000000003'),(10,'DH-2025-0010','Công ty CP Đầu Tư XD Tân Long','2025-03-20 15:30:00.000000',115000000.00,'Pending','01000000000000000000000000000005');
-/*!40000 ALTER TABLE `sales_orders` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `system_logs`
---
-
-DROP TABLE IF EXISTS `system_logs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `system_logs` (
-  `id` char(32) NOT NULL,
-  `action_type` varchar(50) NOT NULL,
-  `target_module` varchar(50) NOT NULL,
-  `old_value` json DEFAULT NULL,
-  `new_value` json DEFAULT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `user_id` char(32) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `system_logs_user_id_77b716fd_fk_users_id` (`user_id`),
-  CONSTRAINT `system_logs_user_id_77b716fd_fk_users_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+  UNIQUE KEY `token_id` (`token_id`),
+  CONSTRAINT `token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `system_logs`
+-- Dumping data for table `token_blacklist_blacklistedtoken`
 --
 
-LOCK TABLES `system_logs` WRITE;
-/*!40000 ALTER TABLE `system_logs` DISABLE KEYS */;
-INSERT INTO `system_logs` VALUES ('05000000000000000000000000000001','CREATE','product',NULL,'{\"name\": \"Xi măng Hà Tiên PCB40 50kg\", \"base_price\": 95000}','2024-01-10 09:00:00.000000','01000000000000000000000000000001'),('05000000000000000000000000000002','UPDATE','product','{\"base_price\": 90000}','{\"base_price\": 95000}','2025-02-15 10:30:00.000000','01000000000000000000000000000001'),('05000000000000000000000000000003','CREATE','warehouse',NULL,'{\"name\": \"Kho vật tư lẻ - Q12\", \"location\": \"45 Tô Ký, Q12\"}','2025-01-02 08:15:00.000000','01000000000000000000000000000002'),('05000000000000000000000000000004','CREATE','warehouse_transaction',NULL,'{\"code\": \"NK-2025-0001\", \"type\": \"IMPORT\", \"quantity\": 500}','2025-01-03 07:35:00.000000','01000000000000000000000000000006'),('05000000000000000000000000000005','UPDATE','user','{\"is_active\": true}','{\"is_active\": false}','2025-02-10 16:00:00.000000','01000000000000000000000000000001');
-/*!40000 ALTER TABLE `system_logs` ENABLE KEYS */;
+LOCK TABLES `token_blacklist_blacklistedtoken` WRITE;
+/*!40000 ALTER TABLE `token_blacklist_blacklistedtoken` DISABLE KEYS */;
+/*!40000 ALTER TABLE `token_blacklist_blacklistedtoken` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `token_blacklist_outstandingtoken`
+--
+
+DROP TABLE IF EXISTS `token_blacklist_outstandingtoken`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `token_blacklist_outstandingtoken` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `token` longtext NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `expires_at` datetime(6) NOT NULL,
+  `user_id` char(32) DEFAULT NULL,
+  `jti` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq` (`jti`),
+  KEY `token_blacklist_outstandingtoken_user_id_83bc629a_fk_users_id` (`user_id`),
+  CONSTRAINT `token_blacklist_outstandingtoken_user_id_83bc629a_fk_users_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `token_blacklist_outstandingtoken`
+--
+
+LOCK TABLES `token_blacklist_outstandingtoken` WRITE;
+/*!40000 ALTER TABLE `token_blacklist_outstandingtoken` DISABLE KEYS */;
+INSERT INTO `token_blacklist_outstandingtoken` VALUES (1,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3ODAzNjUyMSwiaWF0IjoxNzc1NDQ0NTIxLCJqdGkiOiJiMzFiZTE4MjlhNDI0MjIzYjEyNGU0NTJlMDhiODE0NyIsInVzZXJfaWQiOiI5MDAwYTkyNS03NWQ5LTRhNjktYWNkZS0xOWY1Yjc1ODE0YzEifQ.loY_2mpkpkqMkUo8Bx1J9LpFpnKQlrKNyaA2RkySLZo','2026-04-06 03:02:01.818673','2026-05-06 03:02:01.000000','9000a92575d94a69acde19f5b75814c1','b31be1829a424223b124e452e08b8147');
+/*!40000 ALTER TABLE `token_blacklist_outstandingtoken` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -480,7 +382,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('pbkdf2_sha256$admin02','2025-03-19 10:00:00.000000',1,'admin02','Hùng','Trần','admin02@vlxd.vn',1,1,'2024-01-02 08:00:00.000000','01000000000000000000000000000002','Trần Văn Hùng','0901000002','45 Nguyễn Huệ, Q1, TP.HCM','ADMIN'),('pbkdf2_sha256$sale01','2025-03-21 08:30:00.000000',0,'sale01','Lan','Phạm','sale01@vlxd.vn',0,1,'2024-01-05 08:00:00.000000','01000000000000000000000000000003','Phạm Thị Lan','0902000001','78 Trần Hưng Đạo, Q5, TP.HCM','SALE'),('pbkdf2_sha256$sale02','2025-03-20 14:00:00.000000',0,'sale02','Hoa','Lê','sale02@vlxd.vn',0,1,'2024-01-06 08:00:00.000000','01000000000000000000000000000004','Lê Thị Hoa','0902000002','23 Đinh Tiên Hoàng, Q1, TP.HCM','SALE'),('pbkdf2_sha256$sale03','2025-03-18 09:00:00.000000',0,'sale03','Tuấn','Đỗ','sale03@vlxd.vn',0,1,'2024-01-07 08:00:00.000000','01000000000000000000000000000005','Đỗ Văn Tuấn','0902000003','56 Lý Thường Kiệt, Q10, TP.HCM','SALE'),('pbkdf2_sha256$kho01','2025-03-21 07:30:00.000000',0,'kho01','Nam','Hoàng','kho01@vlxd.vn',0,1,'2024-01-10 08:00:00.000000','01000000000000000000000000000006','Hoàng Văn Nam','0903000001','11 Điện Biên Phủ, Bình Thạnh, TP.HCM','KHO'),('pbkdf2_sha256$kho02','2025-03-20 07:00:00.000000',0,'kho02','Dũng','Ngô','kho02@vlxd.vn',0,1,'2024-01-11 08:00:00.000000','01000000000000000000000000000007','Ngô Văn Dũng','0903000002','22 Hoàng Văn Thụ, Phú Nhuận, TP.HCM','KHO'),('pbkdf2_sha256$kho03','2025-03-19 08:00:00.000000',0,'kho03','Hiền','Đinh','kho03@vlxd.vn',0,1,'2024-01-12 08:00:00.000000','01000000000000000000000000000008','Đinh Thị Hiền','0903000003','67 Lê Văn Sỹ, Q3, TP.HCM','KHO'),('pbkdf2_sha256$ketoan01','2025-03-21 08:00:00.000000',0,'ketoan01','Thu','Phan','ketoan01@vlxd.vn',0,1,'2024-01-15 08:00:00.000000','01000000000000000000000000000009','Phan Thị Thu','0904000001','44 Nguyễn Đình Chiểu, Q3, TP.HCM','KE_TOAN'),('pbkdf2_sha256$ketoan02','2025-03-20 08:30:00.000000',0,'ketoan02','Hằng','Vũ','ketoan02@vlxd.vn',0,1,'2024-01-16 08:00:00.000000','01000000000000000000000000000010','Vũ Thị Hằng','0904000002','77 Bà Huyện Thanh Quan, Q3, TP.HCM','KE_TOAN'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2026-03-28 11:14:37.381273',1,'admin','','','',1,1,'2026-03-23 08:16:05.150846','9000a92575d94a69acde19f5b75814c1','',NULL,NULL,'');
+INSERT INTO `users` VALUES ('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-19 10:00:00.000000',1,'admin02','Hùng','Trần','admin02@vlxd.vn',1,1,'2024-01-02 08:00:00.000000','01000000000000000000000000000002','Trần Văn Hùng','0901000002','45 Nguyễn Huệ, Q1, TP.HCM','ADMIN'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-21 08:30:00.000000',0,'sale01','Lan','Phạm','sale01@vlxd.vn',0,1,'2024-01-05 08:00:00.000000','01000000000000000000000000000003','Phạm Thị Lan','0902000001','78 Trần Hưng Đạo, Q5, TP.HCM','SALE'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-20 14:00:00.000000',0,'sale02','Hoa','Lê','sale02@vlxd.vn',0,1,'2024-01-06 08:00:00.000000','01000000000000000000000000000004','Lê Thị Hoa','0902000002','23 Đinh Tiên Hoàng, Q1, TP.HCM','SALE'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-18 09:00:00.000000',0,'sale03','Tuấn','Đỗ','sale03@vlxd.vn',0,1,'2024-01-07 08:00:00.000000','01000000000000000000000000000005','Đỗ Văn Tuấn','0902000003','56 Lý Thường Kiệt, Q10, TP.HCM','SALE'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-21 07:30:00.000000',0,'kho01','Nam','Hoàng','kho01@vlxd.vn',0,1,'2024-01-10 08:00:00.000000','01000000000000000000000000000006','Hoàng Văn Nam','0903000001','11 Điện Biên Phủ, Bình Thạnh, TP.HCM','KHO'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-20 07:00:00.000000',0,'kho02','Dũng','Ngô','kho02@vlxd.vn',0,1,'2024-01-11 08:00:00.000000','01000000000000000000000000000007','Ngô Văn Dũng','0903000002','22 Hoàng Văn Thụ, Phú Nhuận, TP.HCM','KHO'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-19 08:00:00.000000',0,'kho03','Hiền','Đinh','kho03@vlxd.vn',0,1,'2024-01-12 08:00:00.000000','01000000000000000000000000000008','Đinh Thị Hiền','0903000003','67 Lê Văn Sỹ, Q3, TP.HCM','KHO'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-21 08:00:00.000000',0,'ketoan01','Thu','Phan','ketoan01@vlxd.vn',0,1,'2024-01-15 08:00:00.000000','01000000000000000000000000000009','Phan Thị Thu','0904000001','44 Nguyễn Đình Chiểu, Q3, TP.HCM','KE_TOAN'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2025-03-20 08:30:00.000000',0,'ketoan02','Hằng','Vũ','ketoan02@vlxd.vn',0,1,'2024-01-16 08:00:00.000000','01000000000000000000000000000010','Vũ Thị Hằng','0904000002','77 Bà Huyện Thanh Quan, Q3, TP.HCM','KE_TOAN'),('pbkdf2_sha256$1200000$9u8MwuLVoJrS1zj2QKQ5CL$ohjkR597ClPlHvyAqJW8wMfSNdbMAYnBdglTiKsCd5A=','2026-04-06 03:02:27.394312',1,'admin','','','',1,1,'2026-03-23 08:16:05.150846','9000a92575d94a69acde19f5b75814c1','',NULL,NULL,'');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -539,69 +441,6 @@ LOCK TABLES `users_user_permissions` WRITE;
 /*!40000 ALTER TABLE `users_user_permissions` DISABLE KEYS */;
 /*!40000 ALTER TABLE `users_user_permissions` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `warehouse_transactions`
---
-
-DROP TABLE IF EXISTS `warehouse_transactions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `warehouse_transactions` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `code` varchar(20) NOT NULL,
-  `quantity` decimal(15,2) NOT NULL,
-  `transaction_type` varchar(20) NOT NULL,
-  `transaction_date` datetime(6) NOT NULL,
-  `created_by_id` char(32) NOT NULL,
-  `product_id` char(32) NOT NULL,
-  `warehouse_id` bigint NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `code` (`code`),
-  KEY `warehouse_transactions_created_by_id_81a9acda_fk_users_id` (`created_by_id`),
-  KEY `warehouse_transactions_product_id_f0ce0cf4_fk_products_id` (`product_id`),
-  KEY `warehouse_transactions_warehouse_id_b3635583_fk_warehouses_id` (`warehouse_id`),
-  CONSTRAINT `warehouse_transactions_created_by_id_81a9acda_fk_users_id` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `warehouse_transactions_product_id_f0ce0cf4_fk_products_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
-  CONSTRAINT `warehouse_transactions_warehouse_id_b3635583_fk_warehouses_id` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `warehouse_transactions`
---
-
-LOCK TABLES `warehouse_transactions` WRITE;
-/*!40000 ALTER TABLE `warehouse_transactions` DISABLE KEYS */;
-INSERT INTO `warehouse_transactions` VALUES (1,'NK-2025-0001',500.00,'IMPORT','2025-01-03 07:30:00.000000','01000000000000000000000000000006','03000000000000000000000000000001',1),(2,'NK-2025-0002',200.00,'IMPORT','2025-01-04 08:00:00.000000','01000000000000000000000000000006','03000000000000000000000000000007',1),(3,'NK-2025-0003',800.00,'IMPORT','2025-01-04 09:00:00.000000','01000000000000000000000000000007','03000000000000000000000000000010',1),(4,'NK-2025-0004',15000.00,'IMPORT','2025-01-06 07:00:00.000000','01000000000000000000000000000008','03000000000000000000000000000004',2),(5,'NK-2025-0005',600.00,'IMPORT','2025-02-01 08:00:00.000000','01000000000000000000000000000007','03000000000000000000000000000011',4),(6,'XK-2025-0001',200.00,'EXPORT','2025-01-05 10:00:00.000000','01000000000000000000000000000006','03000000000000000000000000000001',1),(7,'XK-2025-0002',80.00,'EXPORT','2025-01-12 11:00:00.000000','01000000000000000000000000000006','03000000000000000000000000000007',1),(8,'XK-2025-0003',300.00,'EXPORT','2025-02-03 09:30:00.000000','01000000000000000000000000000007','03000000000000000000000000000010',1),(9,'XK-2025-0004',8000.00,'EXPORT','2025-02-14 08:00:00.000000','01000000000000000000000000000008','03000000000000000000000000000004',2),(10,'XK-2025-0005',200.00,'EXPORT','2025-03-05 10:00:00.000000','01000000000000000000000000000007','03000000000000000000000000000011',4);
-/*!40000 ALTER TABLE `warehouse_transactions` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `warehouses`
---
-
-DROP TABLE IF EXISTS `warehouses`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `warehouses` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `location` varchar(255) DEFAULT NULL,
-  `description` longtext,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `warehouses`
---
-
-LOCK TABLES `warehouses` WRITE;
-/*!40000 ALTER TABLE `warehouses` DISABLE KEYS */;
-INSERT INTO `warehouses` VALUES (1,'Kho chính - Bình Dương','Khu CN Sóng Thần, Bình Dương','Kho trung tâm, chứa xi măng, cát, đá, sắt thép khối lượng lớn'),(2,'Kho phụ - Thủ Đức','12 Đỗ Xuân Hợp, TP.Thủ Đức, HCM','Kho trung chuyển khu vực TP.HCM, gạch và vật liệu hoàn thiện'),(3,'Kho vật liệu thô - Nhơn Trạch','KCN Nhơn Trạch, Đồng Nai','Chuyên cát, sỏi, đá xây dựng nhập trực tiếp từ mỏ'),(4,'Kho sắt thép - Long An','QL1A, Bến Lức, Long An','Kho chuyên sắt thép, lưới thép, tôn lợp'),(5,'Kho vật tư lẻ - Q12','45 Tô Ký, Q12, TP.HCM','Kho nhỏ gần trung tâm, ống nhựa, sơn, vật tư lẻ');
-/*!40000 ALTER TABLE `warehouses` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -612,4 +451,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-28 18:23:24
+-- Dump completed on 2026-04-06 10:14:24
