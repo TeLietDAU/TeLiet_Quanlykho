@@ -127,12 +127,5 @@
   {% endif %}
 {% endif %}
 
-{% if user_role == 'KHO' or user_role == 'ADMIN' %}
-  {% if receipt.status == 'REJECTED' %}
-  <div style="margin-top:20px;">
-    <a href="{% url 'warehouse:export_list' %}" class="btn btn-primary">Sửa & gửi lại</a>
-  </div>
-  {% endif %}
-{% endif %}
 
 {% endblock %}

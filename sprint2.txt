@@ -1,0 +1,371 @@
+═════════════════════════════════════════════════════════════════════════════════
+                        HỆ THỐNG QUẢN LÝ KHO VẬT LIỆU - SPRINT 2
+                               HƯỚNG DẪN TEST CHI TIẾT
+═════════════════════════════════════════════════════════════════════════════════
+
+📋 CHỨC NĂNG CHÍNH (Sprint 2):
+1. ✓ Quản lý nhập kho (IMPORT RECEIPT)
+2. ✓ Quản lý tồn kho (PRODUCT STOCK)
+3. ✓ Quản lý đơn hàng (SALES ORDER)
+4. ✓ Quản lý xuất kho (EXPORT RECEIPT) - Chỉ auto-create từ đơn hàng
+
+═════════════════════════════════════════════════════════════════════════════════
+1️⃣  HỆ THỐNG NGƯỜI DÙNG VÀ QUYỀN HẠN
+═════════════════════════════════════════════════════════════════════════════════
+
+Có 4 vai trò trong hệ thống:
+
+✅ ADMIN (Quản trị viên):
+   - Có tất cả quyền
+
+✅ SALE (Nhân viên bán hàng):
+   - Tạo đơn hàng bán
+   - Xem sản phẩm,danh mục
+   - Không được xem kho hàng
+
+✅ KHO (Thủ kho):
+   - Tạo phiếu nhập kho
+   - Duyệt/từ chối phiếu xuất kho
+   - Xem tồn kho
+
+✅ KE_TOAN (Kế toán):
+   - Duyệt/từ chối phiếu nhập kho
+   - Duyệt/từ chối phiếu xuất kho
+   - Xem tồn kho
+
+═════════════════════════════════════════════════════════════════════════════════
+2️⃣  QUẢN LÝ NHẬP KHO (IMPORT RECEIPT)
+═════════════════════════════════════════════════════════════════════════════════
+
+🎯 Chức năng: 
+  - KHO tạo phiếu nhập
+  - KE_TOAN duyệt hoặc từ chối
+  - Tồn kho được cập nhật khi duyệt
+
+📊 QUY TRÌNH: Thủ kho tạo → Chờ duyệt → Kế toán duyệt → Tồn kho tăng
+
+👤 Quyền tạo: KHO, ADMIN
+👤 Quyền duyệt: KE_TOAN, ADMIN
+
+📝 CÁC BƯỚC TEST:
+
+▸ BƯỚC 1: Thủ kho tạo phiếu nhập
+  1. Đăng nhập bằng tài khoản KHO
+  2. Vào menu "Nhập Kho" (Quản lý kho > Nhập kho)
+  3. Nhấn "Tạo Phiếu Nhập"
+  4. Nhập chi tiết:
+     - Chọn sản phẩm: VD: "Xi măng"
+     - Số lượng: VD: 100
+     - Giá nhập: VD: 90000
+     - Ghi chú: VD: "Nhập từ nhà cung cấp A"
+     - Có thể thêm nhiều dòng sản phẩm bằng nút "Thêm sản phẩm"
+  5. Nhấn "Tạo Phiếu"
+  → KỲ VỌNG: 
+     - Phiếu được tạo với mã phiếu (VD: IMPORT-001)
+     - Trạng thái: "Chờ duyệt" (PENDING)
+     - Xuất hiện trong danh sách phiếu nhập
+
+▸ BƯỚC 2: Kế toán duyệt phiếu nhập
+  1. Đăng nhập bằng tài khoản KE_TOAN
+  2. Vào menu "Nhập Kho"
+  3. Tìm phiếu có trạng thái "Chờ duyệt"
+  4. Nhấn vào phiếu để xem chi tiết
+  5. Kiểm tra thông tin sản phẩm, số lượng, giá
+  6. Nhấn "Duyệt Phiếu" / "Approve"
+  → KỲ VỌNG:
+     - Phiếu chuyển sang trạng thái "Đã duyệt" (APPROVED)
+     - Tồn kho sản phẩm được tăng lên (số lượng nhập)
+     - Thời gian duyệt được ghi lại
+
+▸ BƯỚC 3: Thực hiện từ chối phiếu (Alternative)
+  1. Thay vì duyệt, nhấn "Từ chối" / "Reject"
+  2. Nhập lý do từ chối trong ô "Ghi chú từ chối"
+  3. Nhấn "Từ chối Phiếu"
+  → KỲ VỌNG:
+     - Phiếu chuyển sang trạng thái "Từ chối" (REJECTED)
+     - Tồn kho KHÔNG thay đổi
+     - Thủ kho có thể xem lý do từ chối
+
+▸ BƯỚC 4: Thủ kho gửi lại phiếu bị từ chối
+  1. Đăng nhập bằng tài khoản KHO
+  2. Vào menu "Nhập Kho"
+  3. Tìm phiếu có trạng thái "Từ chối"
+  4. Nhấn vào phiếu, sau đó nhấn "Sửa & Gửi Lại" / "Resubmit"
+  5. Cập nhật thông tin nếu cần
+  6. Nhấn "Gửi Lại"
+  → KỲ VỌNG:
+     - Phiếu trở lại trạng thái "Chờ duyệt" (PENDING)
+     - Có thể được kế toán duyệt lại
+
+═════════════════════════════════════════════════════════════════════════════════
+3️⃣  QUẢN LÝ TỒN KHO (PRODUCT STOCK)
+═════════════════════════════════════════════════════════════════════════════════
+
+🎯 Chức năng: Hiển thị số lượng hiện tại của từng sản phẩm trong kho
+
+📊 Cách tồn kho được cập nhật:
+  ✓ Tăng: Khi phiếu nhập kho được duyệt
+  ✓ Giảm: Khi phiếu xuất kho được duyệt hoặc đơn hàng tạo successful
+  ✓ Luôn real-time
+
+👤 Quyền xem: Tất cả các role (ADMIN, SALE, KHO, KE_TOAN)
+
+📝 CÁC BƯỚC TEST:
+
+▸ BƯỚC 1: Xem Tồn Kho
+  1. Đăng nhập bằng tài khoản bất kỳ
+  2. Vào menu "Tồn Kho" (Quản lý kho > Tồn kho)
+  3. Xem danh sách tất cả sản phẩm với số lượng hiện tại
+  4. Có thể tìm kiếm sản phẩm theo tên
+  → KỲ VỌNG:
+     - Danh sách hiển thị đúng các sản phẩm
+     - Số lượng tương ứng với phiếu đã duyệt
+
+▸ BƯỚC 2: Kiểm tra thay đổi tồn kho sau nhập
+  1. Ghi lại số lượng hiện tại của sản phẩm "Xi măng": VD: 100
+  2. Tạo và duyệt phiếu nhập kho 50 kg "Xi măng" (theo bước 3)
+  3. Quay lại trang "Tồn Kho"
+  4. Kiểm tra số lượng "Xi măng"
+  → KỲ VỌNG: Số lượng tăng từ 100 → 150
+
+△ LƯU Ý: Nếu sản phẩm chưa có tồn kho, hệ thống sẽ tạo mới với số lượng bằng 
+  số lượng nhập vào
+
+═════════════════════════════════════════════════════════════════════════════════
+4️⃣  QUẢN LÝ ĐƠN HÀNG (SALES ORDER)
+═════════════════════════════════════════════════════════════════════════════════
+
+🎯 Chức năng:
+  - Nhân viên bán hàng tạo đơn hàng
+  - Tồn kho tự động giảm khi tạo đơn hàng
+  - Quản lý trạng thái đơn hàng
+  - Phiếu xuất cập nhật tự động
+
+📊 QUY TRÌNH: SALE tạo đơn hàng → Tồn kho giảm → WAITING (output created auto)
+               → KHO duyệt xuất → Hoàn thành
+
+👤 Quyền tạo: SALE, ADMIN
+👤 Quyền cập nhật trạng thái: KHO, KE_TOAN, ADMIN (không phải SALE)
+
+📝 CÁC BƯỚC TEST:
+
+▸ BƯỚC 1: SALE tạo đơn hàng
+  1. Đăng nhập bằng tài khoản SALE
+  2. Vào menu "Đơn Hàng" (Quản lý bán hàng > Đơn hàng)
+  3. Nhấn "Tạo Đơn Hàng"
+  4. Nhập thông tin:
+     - Tên khách hàng: VD: "Công ty ABC"
+     - SĐT khách hàng: VD: "0912345678"
+     - Ghi chú: VD: "Giao trong 2 ngày"
+  5. Thêm sản phẩm:
+     - Chọn sản phẩm: VD: "Xi măng"
+     - Số lượng: VD: 30 (phải ≤ tồn kho)
+     - Giá: VD: 95000
+     - Có thể thêm nhiều dòng sản phẩm
+  6. Nhấn "Tạo Đơn Hàng"
+  → KỲ VỌNG:
+     - Đơn hàng được tạo với mã (VD: SO-001)
+     - Trạng thái: "XÁC NHẬN" (CONFIRMED)
+     - Tồn kho sản phẩm được trừ ngay lập tức
+     - VD: Xi măng từ 150 → 120
+
+▸ BƯỚC 2: Kiểm tra tồn kho sau tạo đơn hàng
+  1. Vào menu "Tồn Kho"
+  2. Kiểm tra sản phẩm "Xi măng"
+  → KỲ VỌNG: Số lượng đã giảm theo lượng bán
+
+△ LƯU Ý: Nếu số lượng đơn hàng > tồn kho, hệ thống sẽ báo lỗi
+  "Tồn kho không đủ!" và không cho tạo đơn hàng
+
+▸ BƯỚC 3: Cập nhật trạng thái đơn hàng thành WAITING (Chờ lấy hàng)
+  1. Đăng nhập bằng tài khoản KHO hoặc KE_TOAN
+  2. Vào menu "Đơn Hàng"
+  3. Tìm đơn hàng vừa tạo
+  4. Nhấn vào đơn hàng để xem chi tiết
+  5. Nhấn "Chuyển sang Chờ lấy hàng" / "Mark as WAITING"
+  → KỲ VỌNG:
+     - Trạng thái thay đổi: CONFIRMED → WAITING
+     - TỰ ĐỘNG: Phiếu xuất kho (ExportReceipt) được tạo
+     - Phiếu xuất ở trạng thái "Chờ duyệt" (PENDING)
+
+▸ BƯỚC 4: Hoàn thành đơn hàng
+  1. Trong trang chi tiết đơn hàng
+  2. Nhấn "Hoàn thành" / "Mark as DONE"
+  → KỲ VỌNG: Trạng thái: WAITING → DONE
+
+▸ BƯỚC 5: Hủy đơn hàng (Alternative)
+  1. Nhấn "Hủy đơn hàng" / "Cancel"
+  2. Xác nhận hủy
+  → KỲ VỌNG: 
+     - Trạng thái: CANCELLED
+     - GIAO DỊCH LỖI: Tồn kho cần được cập nhật lại!
+       (Tùy thuộc vào cách implement)
+
+═════════════════════════════════════════════════════════════════════════════════
+6️⃣  QUẢN LÝ XUẤT KHO (EXPORT RECEIPT)
+═════════════════════════════════════════════════════════════════════════════════
+
+🎯 Chức năng:
+  - Tạo TỰ ĐỘNG khi đơn hàng chuyển sang WAITING
+  - Tạo THỦ CÔNG bởi KHO/ADMIN
+  - Kế toán hoặc KHO duyệt
+  - Tồn kho giảm khi duyệt
+
+📊 QUY TRÌNH: Đơn hàng WAITING (auto create) hoặc KHO tạo thủ công
+              → Chờ duyệt → Duyệt → Tồn kho giảm
+
+👤 Quyền tạo thủ công: KHO, ADMIN
+👤 Quyền duyệt: Tất cả role (ADMIN, SALE, KHO, KE_TOAN)
+
+📝 CÁC BƯỚC TEST:
+
+▸ BƯỚC 1: Phiếu xuất được tạo TỰ ĐỘNG từ đơn hàng
+  (Đã thực hiện ở bước 3 của phần Đơn Hàng)
+  → Phiếu xuất xuất hiện trong menu "Xuất Kho"
+
+▸ BƯỚC 2: KHO/ADMIN duyệt phiếu xuất tự động
+  1. Đăng nhập bằng tài khoản KHO
+  2. Vào menu "Xuất Kho"
+  3. Tìm phiếu được tạo tự động (status: PENDING)
+  4. Nhấn vào phiếu để xem chi tiết
+  5. Kiểm tra danh sách sản phẩm, số lượng
+  6. Nhấn "Duyệt Phiếu" / "Approve"
+  → KỲ VỌNG:
+     - Phiếu chuyển sang "Đã duyệt" (APPROVED)
+     - Tồn kho sản phẩm giảm theo số lượng xuất
+     - VD: Xi măng từ 120 → 90
+
+▸ BƯỚC 3: Từ chối phiếu xuất (Alternative)
+  1. Nhấn "Từ chối" / "Reject"
+  2. Nhập lý do từ chối
+  3. Nhấn "Từ chối Phiếu"
+  → KỲ VỌNG:
+     - Phiếu: REJECTED
+     - Tồn kho KHÔNG thay đổi
+
+▸ BƯỚC 4: Thủ kho tạo phiếu xuất THỦ CÔNG
+  1. Đăng nhập bằng tài khoản KHO
+  2. Vào menu "Xuất Kho"
+  3. Nhấn "Tạo Phiếu Xuất Thủ Công"
+  4. Nhập chi tiết:
+     - Chọn sản phẩm: VD: "Sơn acrylic"
+     - Số lượng: VD: 10 (phải ≤ tồn kho)
+     - Lý do xuất: VD: "Bán lẻ"
+     - Ghi chú: VD: "Khách chính"
+  5. Nhấn "Tạo Phiếu"
+  → KỲ VỌNG:
+     - Phiếu xuất thủ công được tạo
+     - Trạng thái: PENDING (chờ duyệt)
+     - Xuất hiện trong danh sách
+
+△ LƯU Ý: Nếu số lượng xuất > tồn kho, hệ thống báo lỗi
+  "Tồn kho không đủ để xuất!"
+
+═════════════════════════════════════════════════════════════════════════════════
+📋 TÓMLƯỢC QUY TRÌNH END-TO-END
+═════════════════════════════════════════════════════════════════════════════════
+
+1️⃣  KHO tạo phiếu nhập kho
+2️⃣  KE_TOAN duyệt phiếu nhập → Tồn kho tăng
+3️⃣  SALE tạo đơn hàng → Tồn kho giảm + Phiếu xuất tự động
+4️⃣  KHO/KE_TOAN duyệt phiếu xuất → Tồn kho giảm tiếp
+
+═════════════════════════════════════════════════════════════════════════════════
+🔐 KIỂM TRA QUYỀN HẠN
+═════════════════════════════════════════════════════════════════════════════════
+
+Test các tài khoản khác nhau để đảm bảo quyền hạn:
+
+✓ SALE account test:
+  - Có thể: Xem sản phẩm, tạo đơn hàng, xem tồn kho
+  - Không thể: Tạo phiếu nhập, duyệt phiếu, cập nhật trạng thái đơn hàng
+  → Nếu cố gắng truy cập, hiển thị: "Bạn không có quyền thực hiện hành động này"
+
+✓ KHO account test:
+  - Có thể: Tạo phiếu nhập, duyệt phiếu xuất, xem tồn kho
+  - Không thể: Duyệt phiếu nhập, tạo đơn hàng
+  
+✓ KE_TOAN account test:
+  - Có thể: Duyệt phiếu nhập, duyệt phiếu xuất, xem tồn kho, xem dữ liệu
+  - Không thể: Tạo phiếu nhập, tạo đơn hàng
+
+✓ ADMIN account test:
+  - Có thể: Tất cả hành động
+
+═════════════════════════════════════════════════════════════════════════════════
+⚠️ CÁC EDGE CASE CẦN TEST
+═════════════════════════════════════════════════════════════════════════════════
+
+1. Test tạo đơn hàng với số lượng > tồn kho
+   → Hệ thống phải báo lỗi, không cho tạo
+
+2. Test duyệt phiếu nhập/xuất nhiều lần
+   → Phải chỉ hiệu lực duyệt 1 lần, lần thứ 2 báo lỗi
+
+3. Test tìm kiếm đơn hàng/phiếu
+   → Tìm kiếm phải hoạt động chính xác
+
+4. Test filter theo trạng thái (PENDING, APPROVED, REJECTED)
+   → Filter phải hoạt động chính xác
+
+5. Test phân trang (nếu có nhiều dữ liệu)
+   → Phân trang phải hoạt động đúng
+
+═════════════════════════════════════════════════════════════════════════════════
+💾 DỮ LIỆU TEST MẫU (VDỤ)
+═════════════════════════════════════════════════════════════════════════════════
+
+Giả sử sản phẩm đã được tạo sẵn (không trong sprint này):
+  1. Xi măng - Giá: 100000 - Đơn vị: kg
+  2. Sơn acrylic - Giá: 150000 - Đơn vị: lít
+  3. Gạch thẻ - Giá: 5000 - Đơn vị: cái
+
+PHIẾU NHẬP:
+  Phiếu 1:
+    - Xi măng: 100 kg @ 95000/kg
+    - Sơn acrylic: 50 lít @ 140000/lít
+  
+  Phiếu 2:
+    - Gạch thẻ: 1000 cái @ 4500/cái
+
+ĐƠN HÀNG:
+  Đơn 1:
+    - Khách: Công ty ABC, SĐT: 0912345678
+    - Xi măng: 30 kg @ 100000
+    - Sơn acrylic: 20 lít @ 150000
+
+═════════════════════════════════════════════════════════════════════════════════
+✅ DANH SÁCH KIỂM TRA HOÀN THÀNH SPRINT 2
+═════════════════════════════════════════════════════════════════════════════════
+
+[ ] Tạo phiếu nhập kho (KHO)
+[ ] Phê duyệt phiếu nhập (KE_TOAN)
+[ ] Từ chối phiếu nhập (KE_TOAN)
+[ ] Gửi lại phiếu bị từ chối (KHO)
+[ ] Xem tồn kho real-time
+[ ] Tồn kho tăng sau duyệt nhập
+[ ] Tạo đơn hàng (SALE)
+[ ] Tồn kho giảm sau tạo đơn hàng
+[ ] Cập nhật trạng thái đơn hàng → WAITING
+[ ] Phiếu xuất tạo tự động
+[ ] Duyệt phiếu xuất
+[ ] Từ chối phiếu xuất
+[ ] Tồn kho giảm sau duyệt xuất
+[ ] Test quyền hạn của từng role
+[ ] Test các edge case
+[ ] Kiểm tra UI/UX rõ ràng
+[ ] Kiểm tra thông báo lỗi
+
+═════════════════════════════════════════════════════════════════════════════════
+📞 GHI CHÚ QUAN TRỌNG
+═════════════════════════════════════════════════════════════════════════════════
+
+- Tồn kho được cập nhật NGAY trong transaction, không có delay
+- Nếu gặp lỗi database, hệ thống sẽ rollback lại trạng thái trước đó
+- Phiếu nhập/xuất chỉ có thể sửa khi còn ở trạng thái PENDING hoặc REJECTED
+- Đơn hàng tạo → tồn kho trừ NGAY (không chờ duyệt)
+- Phiếu xuất tạo TỰ ĐỘNG → chờ duyệt → tồn kho trừ tiếp (nếu duyệt)
+
+═════════════════════════════════════════════════════════════════════════════════
+                                  HẾT
+═════════════════════════════════════════════════════════════════════════════════

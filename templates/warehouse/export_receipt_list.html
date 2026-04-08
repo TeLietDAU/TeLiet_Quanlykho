@@ -156,14 +156,7 @@
               {% endif %}
             {% endif %}
 
-            {% if user_role == 'KHO' or user_role == 'ADMIN' %}
-              {% if r.status == 'REJECTED' %}
-              <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;"
-                onclick="openResubmitModal('{{ r.id }}','{{ r.receipt_code }}','{{ r.rejection_note|escapejs }}')">
-                Sửa & gửi lại
-              </button>
-              {% endif %}
-            {% endif %}
+            
           </div>
         </td>
       </tr>
