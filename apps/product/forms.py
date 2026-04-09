@@ -1,14 +1,24 @@
 """
-apps/product/forms.py - CẬP NHẬT để hỗ trợ upload ảnh thực
-Thay thế file cũ bằng file này.
+apps/product/forms.py - Form với validation đầy đủ
 """
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import Product, Category, ProductUnit
+from .validators import (
+    ProductValidator,
+    CategoryValidator,
+    ProductUnitValidator,
+    validate_product_name_unique,
+    validate_category_name_unique,
+    validate_file_image,
+)
 
 CONTROL_CLASS = 'search-input'
 
 
 class ProductForm(forms.ModelForm):
+    """Form tạo/chỉnh sửa sản phẩm với validation đầy đủ"""
+    
     # Thêm trường upload ảnh mới (không bắt buộc để có thể sửa sản phẩm mà không cần upload lại)
     anh_san_pham = forms.ImageField(
         required=False,
@@ -25,7 +35,6 @@ class ProductForm(forms.ModelForm):
 
     class Meta:
         model = Product
-        # Bỏ image_url khỏi fields - sẽ xử lý qua anh_san_pham
         fields = ['name', 'category', 'base_price', 'base_unit']
         labels = {
             'name': 'Tên vật liệu',
@@ -36,12 +45,71 @@ class ProductForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': CONTROL_CLASS, 'placeholder': 'VD: Xi măng Hà Tiên'}),
             'category': forms.Select(attrs={'class': CONTROL_CLASS}),
-            'base_price': forms.NumberInput(attrs={'class': CONTROL_CLASS, 'step': '0.01'}),
+            'base_price': forms.NumberInput(attrs={'class': CONTROL_CLASS, 'step': '0.01', 'min': '0'}),
             'base_unit': forms.TextInput(attrs={'class': CONTROL_CLASS, 'placeholder': 'VD: Bao, Cây, m3...'}),
         }
 
+    def clean_name(self):
+        """Kiểm tra tên sản phẩm"""
+        name = self.cleaned_data.get('name')
+        
+        # Kiểm tra format
+        try:
+            name = ProductValidator.validate_product_name(name)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        
+        # Kiểm tra trùng lặp (ngoại trừ bản ghi hiện tại khi chỉnh sửa)
+        try:
+            validate_product_name_unique(name, exclude_id=self.instance.id if self.instance.id else None)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        
+        return name
+
+    def clean_base_price(self):
+        """Kiểm tra giá cơ bản"""
+        price = self.cleaned_data.get('base_price')
+        try:
+            price = ProductValidator.validate_base_price(price)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        return price
+
+    def clean_base_unit(self):
+        """Kiểm tra đơn vị cơ bản"""
+        unit = self.cleaned_data.get('base_unit')
+        try:
+            unit = ProductValidator.validate_base_unit(unit)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        return unit
+
+    def clean_anh_san_pham(self):
+        """Kiểm tra file ảnh"""
+        file = self.cleaned_data.get('anh_san_pham')
+        if file:
+            try:
+                validate_file_image(file)
+            except ValidationError as e:
+                raise forms.ValidationError(e.message)
+        return file
+
+    def clean(self):
+        """Kiểm tra tổng hợp"""
+        cleaned_data = super().clean()
+        
+        # Kiểm tra danh mục được chọn
+        category = cleaned_data.get('category')
+        if not category:
+            raise forms.ValidationError("Vui lòng chọn danh mục.")
+        
+        return cleaned_data
+
 
 class CategoryForm(forms.ModelForm):
+    """Form tạo/chỉnh sửa danh mục với validation đầy đủ"""
+    
     class Meta:
         model = Category
         fields = ['name']
@@ -53,8 +121,28 @@ class CategoryForm(forms.ModelForm):
             }),
         }
 
+    def clean_name(self):
+        """Kiểm tra tên danh mục"""
+        name = self.cleaned_data.get('name')
+        
+        # Kiểm tra format
+        try:
+            name = CategoryValidator.validate_category_name(name)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        
+        # Kiểm tra trùng lặp (ngoại trừ bản ghi hiện tại khi chỉnh sửa)
+        try:
+            validate_category_name_unique(name, exclude_id=self.instance.id if self.instance.id else None)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        
+        return name
+
 
 class ProductUnitForm(forms.ModelForm):
+    """Form tạo/chỉnh sửa đơn vị sản phẩm với validation đầy đủ"""
+    
     class Meta:
         model = ProductUnit
         fields = ['product', 'unit_name', 'conversion_rate']
@@ -65,12 +153,44 @@ class ProductUnitForm(forms.ModelForm):
         }
         widgets = {
             'product': forms.Select(attrs={'class': CONTROL_CLASS}),
-            'unit_name': forms.TextInput(attrs={'class': CONTROL_CLASS, 'placeholder': 'VD: Tấn, Thùng...'}),
-            'conversion_rate': forms.NumberInput(attrs={'class': CONTROL_CLASS, 'step': '0.0001'}),
+            'unit_name': forms.TextInput(attrs={'class': CONTROL_CLASS, 'placeholder': 'VD: Tấn, Thiên, Lốc'}),
+            'conversion_rate': forms.NumberInput(attrs={'class': CONTROL_CLASS, 'step': '0.0001', 'min': '0'}),
         }
 
+    def clean_unit_name(self):
+        """Kiểm tra tên đơn vị"""
+        unit_name = self.cleaned_data.get('unit_name')
+        try:
+            unit_name = ProductUnitValidator.validate_unit_name(unit_name)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        return unit_name
+
     def clean_conversion_rate(self):
+        """Kiểm tra tỷ lệ quy đổi"""
         rate = self.cleaned_data.get('conversion_rate')
-        if rate <= 0:
-            raise forms.ValidationError("Tỷ lệ quy đổi phải lớn hơn 0.")
+        try:
+            rate = ProductUnitValidator.validate_conversion_rate(rate)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
         return rate
+
+    def clean(self):
+        """Kiểm tra tổng hợp"""
+        cleaned_data = super().clean()
+        
+        product_id = cleaned_data.get('product')
+        unit_name = cleaned_data.get('unit_name')
+        
+        if product_id and unit_name:
+            # Kiểm tra không trùng lặp đơn vị
+            try:
+                ProductUnitValidator.validate_no_duplicate_unit(
+                    product_id.id,
+                    unit_name,
+                    exclude_id=self.instance.id if self.instance.id else None
+                )
+            except ValidationError as e:
+                raise forms.ValidationError(e.message)
+        
+        return cleaned_data
