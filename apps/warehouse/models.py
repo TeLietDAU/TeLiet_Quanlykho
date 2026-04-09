@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from apps.product.models import Product
 
 
@@ -59,8 +60,19 @@ class ImportReceiptItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     receipt = models.ForeignKey(ImportReceipt, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='import_items')
-    quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    quantity = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)],
+        help_text="Số lượng, phải > 0"
+    )
+    unit_price = models.DecimalField(
+        max_digits=19,
+        decimal_places=4,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Giá/đơn vị, không được âm"
+    )
     note = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -79,7 +91,13 @@ class ProductStock(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='stock')
-    quantity = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    quantity = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Số lượng tồn, không được âm"
+    )
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -144,8 +162,19 @@ class ExportReceiptItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     receipt = models.ForeignKey(ExportReceipt, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='export_items')
-    quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    quantity = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)],
+        help_text="Số lượng, phải > 0"
+    )
+    unit_price = models.DecimalField(
+        max_digits=19,
+        decimal_places=4,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Giá/đơn vị, không được âm"
+    )
     note = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
