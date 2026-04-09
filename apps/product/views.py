@@ -31,17 +31,16 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         search_query = request.GET.get('search', '').strip()
         category_id = request.GET.get('category', '')
-        trang_hien_tai = request.GET.get('trang', 1)
+        page_number = request.GET.get('page', 1)
 
         queryset = service.get_all_products(
             search=search_query if search_query else None,
             category=category_id if category_id else None
         )
 
-        paginator = Paginator(queryset, 5)
-        page_obj = paginator.get_page(trang_hien_tai)
+        paginator = Paginator(queryset, 5)  # Hiển thị 5 sản phẩm mỗi trang
+        page_obj = paginator.get_page(page_number)
 
-        # Lấy tồn kho để hiển thị trạng thái đúng
         stock_map = _get_stock_map()
 
         return render(request, 'product/product_list.html', {
