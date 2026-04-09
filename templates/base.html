@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TeLiet System{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --bg: #0e0f11;
@@ -28,7 +29,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: var(--bg);
-            font-family: 'DM Sans', sans-serif;
+            font-family: Google Sans Flex, sans-serif;
             color: var(--text);
             min-height: 100vh;
             display: flex;
@@ -44,11 +45,29 @@
             position: sticky;
             top: 0;
             flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
         }
         .sidebar-brand {
             padding: 24px 20px;
             border-bottom: 1px solid var(--border);
             display: flex; align-items: center; gap: 10px;
+            transition: background-color 0.15s;
+        }
+        .sidebar-brand:hover {
+            background-color: var(--surface);
         }
         .brand-icon {
             width: 32px; height: 32px;
@@ -56,7 +75,7 @@
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
             flex-shrink: 0;
         }
-        .brand-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; color: var(--text); }
+        .brand-text { font-family: Google Sans Flex, sans-serif; font-weight: 800; font-size: 20px; color: var(--text); }
         .brand-text span { color: var(--accent); }
         .sidebar-section { padding: 20px 12px 8px; }
         .section-label {
@@ -118,7 +137,7 @@
             background: var(--accent);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-family: 'Syne', sans-serif;
+            font-family: Google Sans Flex, sans-serif;
             font-weight: 800;
             font-size: 13px;
             color: #0e0f11;
@@ -171,17 +190,30 @@
         }
         /* ===== CONTENT ===== */
         .content { flex: 1; padding: 28px; overflow-y: auto; }
+        .content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        .content::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
         .page-header {
             display: flex; align-items: flex-start; justify-content: space-between;
             margin-bottom: 28px;
         }
-        .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+        .page-title { font-family: Google Sans Flex, sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
         .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
         .btn {
             display: inline-flex; align-items: center; gap: 7px;
             padding: 9px 18px;
             border-radius: 8px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: Google Sans Flex, sans-serif;
             font-size: 13px; font-weight: 600;
             cursor: pointer; border: none;
             transition: all 0.15s;
@@ -196,11 +228,11 @@
         /* ===== CARD & TABLE ===== */
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
         .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+        .card-title { font-family: Google Sans Flex, sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
         .card-actions { display: flex; gap: 8px; }
         .search-wrap { position: relative; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 13px; height: 13px; pointer-events: none; }
-        .search-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px 8px 32px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text); outline: none; width: 220px; transition: border-color 0.15s; }
+        .search-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px 8px 32px; font-family: Google Sans Flex, sans-serif; font-size: 12px; color: var(--text); outline: none; width: 220px; transition: border-color 0.15s; }
         .search-input::placeholder { color: var(--muted); }
         .search-input:focus { border-color: var(--accent); }
         table { width: 100%; border-collapse: collapse; }
@@ -229,10 +261,10 @@
 <body>
     <!-- SIDEBAR -->
     <aside class="sidebar">
-        <div class="sidebar-brand">
+        <a href="{% url 'dashboard' %}" class="sidebar-brand" style="text-decoration: none; cursor: pointer;">
             <div class="brand-icon"></div>
             <span class="brand-text">Te<span>Liet</span></span>
-        </div>
+        </a>
 
         <div class="sidebar-section">
             <div class="section-label">Tổng quan</div>
@@ -248,20 +280,39 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                 Sản phẩm
             </a>
-            <a href="#" class="nav-item {% block nav_orders %}{% endblock %}">
+            <a href="{% url 'order:sales_list' %}" class="nav-item {% block nav_orders %}{% endblock %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
                 Đơn hàng
-                <span class="nav-badge">5</span>
             </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Khách hàng
-            </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                Nhà cung cấp
+            <a href="{% url 'order:debt_list' %}" class="nav-item {% block nav_debts %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Công nợ
             </a>
         </div>
+
+        {% if user.role != 'SALE' %}
+        <div class="sidebar-section">
+            <div class="section-label">Kho hàng</div>
+            <a href="{% url 'warehouse:export_list' %}" class="nav-item {% block nav_export %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="12 19 12 5"/><polyline points="5 12 12 5 19 12"/>
+                </svg>
+                Xuất kho
+            </a>
+            <a href="{% url 'warehouse:import_list' %}" class="nav-item {% block nav_import %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="12 5 12 19"/><polyline points="19 12 12 19 5 12"/>
+                </svg>
+                Nhập kho
+            </a>
+            <a href="{% url 'warehouse:stock_list' %}" class="nav-item {% block nav_stock %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                Tồn kho
+            </a>
+        </div>
+        {% endif %}
 
         <div class="sidebar-section">
             <div class="section-label">Cấu hình</div>
@@ -281,18 +332,14 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Tài khoản
             </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49"/></svg>
-                Cài đặt
-            </a>
         </div>
 
         <div class="sidebar-footer">
             <div class="user-card">
-                <div class="user-avatar">{{ user_initial }}</div>
-                <div class="user-details">
-                    <div class="user-name">{{ user_full_name }}</div>
-                    <div class="user-role">{{ user_role }}</div>
+                <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.full_name|default:user.username }}</div>
+                    <div class="user-role">{{ user.get_role_display|default:user.role }}</div>
                 </div>
             </div>
             <a href="{% url 'logout' %}" class="nav-item">

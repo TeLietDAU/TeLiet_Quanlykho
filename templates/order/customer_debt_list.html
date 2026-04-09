@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Công nợ — TeLiet System{% endblock %}
+{% block breadcrumb %}Công nợ khách hàng{% endblock %}
+{% block nav_debts %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;}
+.status-badge.PENDING{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.PAID{background:rgba(34,197,94,.12);color:var(--success);}
+.filter-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-tab{padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted2);text-decoration:none;transition:all .15s;}
+.filter-tab:hover,.filter-tab.active{background:rgba(232,164,39,.12);border-color:rgba(232,164,39,.3);color:var(--accent);}
+.search-form{display:flex;align-items:center;gap:8px;}
+.search-form input{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;width:280px;}
+.search-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.search-form button{padding:8px 14px;background:var(--accent);color:#0e0f11;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;}
+.search-form button:hover{filter:brightness(1.1);}
+.filter-search-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:Google Sans Flex,sans-serif;}
+.toast-container{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateX(80px);opacity:0;transition:all .3s;min-width:260px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast.success{border-left:3px solid var(--success);}
+.toast.danger{border-left:3px solid var(--danger);}
+/* Pagination - giống product_list */
+.pagination-wrap{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);}
+.pagination{display:flex;gap:4px;}
+.pg-btn{min-width:30px;height:30px;padding:0 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted2);text-decoration:none;transition:all .15s;}
+.pg-btn:hover{background:var(--surface3);color:var(--text);}
+.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#0e0f11;font-weight:700;}
+.pg-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Công nợ khách hàng</h1>
+    <p class="page-sub">Theo dõi và thanh toán công nợ</p>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Tổng Đơn Hàng</div>
+    <div class="stat-value">{{ stats.total_orders|floatformat:0 }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Đơn Chờ Xử Lý</div>
+    <div class="stat-value">{{ stats.pending_orders|floatformat:0 }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Tổng Nợ (đ)</div>
+    <div class="stat-value" style="font-size:22px;">{{ stats.total_debt|floatformat:0 }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Giao Dịch Hôm Nay</div>
+    <div class="stat-value">{{ stats.today_transactions|floatformat:0 }}</div>
+  </div>
+</div>
+
+<div class="filter-search-row">
+  <div class="filter-tabs">
+    <a href="?status={% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if not status_filter %}active{% endif %}">Tất cả</a>
+    <a href="?status=PENDING{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'PENDING' %}active{% endif %}">⏳ Chưa thanh toán</a>
+    <a href="?status=PAID{% if search_query %}&search={{ search_query }}{% endif %}"    class="filter-tab {% if status_filter == 'PAID'    %}active{% endif %}">✅ Đã thanh toán</a>
+  </div>
+  <form method="get" class="search-form">
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    <input type="text" name="search" placeholder="Tìm theo tên khách hàng..." value="{{ search_query }}">
+    <button type="submit">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Tìm
+    </button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Khách hàng</th>
+        <th>Đơn hàng</th>
+        <th style="text-align:right">Còn nợ</th>
+        <th>Hạn thanh toán</th>
+        <th>Trạng thái</th>
+        {% if user_role == 'KE_TOAN' or user_role == 'ADMIN' %}<th style="text-align:right">Thao tác</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for debt in debts %}
+      <tr>
+        <td class="bold">{{ debt.customer_name }}</td>
+        <td>{{ debt.sales_order.order_code }}</td>
+        <td style="text-align:right;color:var(--danger);font-weight:600;">{{ debt.remaining_amount|floatformat:0 }}đ</td>
+        <td>
+          {% if debt.due_date %}
+            <span style="{% if debt.status == 'PENDING' %}color:var(--warning){% endif %}">
+              {{ debt.due_date|date:"d/m/Y" }}
+            </span>
+          {% else %}—{% endif %}
+        </td>
+        <td><span class="status-badge {{ debt.status }}">{{ debt.get_status_display }}</span></td>
+        {% if user_role == 'KE_TOAN' or user_role == 'ADMIN' %}
+        <td style="text-align:right">
+          {% if debt.status == 'PENDING' %}
+          <form method="post" action="{% url 'order:debt_list' %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="debt_id" value="{{ debt.pk }}">
+            <button type="submit" class="btn btn-ghost" style="padding:5px 12px;font-size:12px;color:var(--success);border-color:rgba(34,197,94,.3);">
+              ✓ Đánh dấu đã trả
+            </button>
+          </form>
+          {% else %}
+          <span style="font-size:12px;color:var(--muted);">Đã xong</span>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">Chưa có công nợ nào.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if paginator.num_pages > 1 %}
+  <div class="pagination-wrap">
+    <span style="font-size:12px;color:var(--muted);">
+      Trang {{ page_obj.number }} / {{ paginator.num_pages }} — {{ paginator.count }} công nợ
+    </span>
+    <div class="pagination">
+      {# Nút trước #}
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">‹</a>
+      {% else %}
+      <span class="pg-btn disabled">‹</span>
+      {% endif %}
+
+      {# Trang 1 #}
+      {% if page_obj.number != 1 %}
+      <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">1</a>
+      {% else %}
+      <span class="pg-btn active">1</span>
+      {% endif %}
+
+      {# Dấu ... trái #}
+      {% if page_obj.number|add:"-1" > 2 %}
+      <span style="margin:0 4px;color:var(--muted);display:flex;align-items:flex-end;height:28px;">...</span>
+      {% endif %}
+
+      {# Các trang xung quanh ±1, bỏ trang 1 và trang cuối #}
+      {% for num in paginator.page_range %}
+        {% if num > 1 and num < paginator.num_pages and num >= page_obj.number|add:"-1" and num <= page_obj.number|add:"1" %}
+          {% if num == page_obj.number %}
+          <span class="pg-btn active">{{ num }}</span>
+          {% else %}
+          <a href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">{{ num }}</a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {# Dấu ... phải #}
+      {% if page_obj.number|add:"1" < paginator.num_pages|add:"-1" %}
+      <span style="margin:0 4px;color:var(--muted);display:flex;align-items:flex-end;height:28px;">...</span>
+      {% endif %}
+
+      {# Trang cuối #}
+      {% if paginator.num_pages > 1 %}
+        {% if page_obj.number != paginator.num_pages %}
+        <a href="?page={{ paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">{{ paginator.num_pages }}</a>
+        {% else %}
+        <span class="pg-btn active">{{ paginator.num_pages }}</span>
+        {% endif %}
+      {% endif %}
+
+      {# Nút sau #}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">›</a>
+      {% else %}
+      <span class="pg-btn disabled">›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<div class="toast-container">
+  {% if messages %}{% for message in messages %}
+  <div class="toast show {{ message.tags }}"><span>{{ message }}</span></div>
+  {% endfor %}{% endif %}
+</div>
+<script>
+setTimeout(() => {
+  document.querySelectorAll('.toast').forEach(t => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  });
+}, 4000);
+</script>
+{% endblock %}

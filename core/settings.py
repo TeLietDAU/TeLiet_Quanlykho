@@ -40,6 +40,8 @@ INSTALLED_APPS = [
 
     # Apps của dự án
     'apps.authentication',
+    'apps.order',           # Đơn hàng, công nợ
+    'apps.warehouse.apps.WarehouseConfig',  # Nhập kho, tồn kho
     'apps.product',
 ]
 
@@ -69,6 +71,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
+                'django.template.context_processors.debug',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -78,17 +81,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# ============================================================
-# DATABASE - MySQL
-# ============================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'quanlykhovatlieu'),
-        'USER': os.environ.get('DB_USER', 'admin'),
+        'NAME':     os.environ.get('DB_NAME',     'quanlykhovatlieu'),
+        'USER':     os.environ.get('DB_USER',     'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', '123456'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
+        'HOST':     os.environ.get('DB_HOST',     'localhost'),
+        'PORT':     os.environ.get('DB_PORT',     '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
 

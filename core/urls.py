@@ -37,6 +37,11 @@ urlpatterns = [
     path('units/', views.units_view, name='units'),
     # path('accounts/', views.accounts_view, name='accounts'),
 
+    # Order app — đơn hàng & công nợ
+    path('', include('apps.order.urls')),
+    
+    # Warehouse app — nhập kho & tồn kho
+    path('', include('apps.warehouse.urls')),
     # API Xác thực (Theo BM01)
     path('api/xac-thuc/', include('apps.authentication.urls')),
 ]

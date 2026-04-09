@@ -10,6 +10,15 @@ from django.contrib import messages
 from .forms import ProductForm, CategoryForm, ProductUnitForm
 from .services import ProductService, CategoryService
 
+
+def _get_stock_map():
+    """Lấy dict {product_id: quantity} từ tồn kho"""
+    try:
+        from apps.warehouse.models import ProductStock
+        stocks = ProductStock.objects.all().values('product_id', 'quantity')
+        return {str(s['product_id']): float(s['quantity']) for s in stocks}
+    except Exception:
+        return {}
 # Import middleware upload mới
 from middlewares.upload_middleware import xu_ly_va_luu_anh, xoa_anh_cu
 from .validators import ProductValidator, CategoryValidator, ProductUnitValidator
@@ -26,14 +35,29 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
         service = ProductService()
         cat_service = CategoryService()
 
-        search_query = request.GET.get('search')
-        category_id = request.GET.get('category')
+        search_query = request.GET.get('search', '').strip()
+        category_id = request.GET.get('category', '')
+        page_number = request.GET.get('page', 1)
 
-        queryset = service.get_all_products(search=search_query, category=category_id)
+        queryset = service.get_all_products(
+            search=search_query if search_query else None,
+            category=category_id if category_id else None
+        )
+
+        paginator = Paginator(queryset, 5)  # Hiển thị 5 sản phẩm mỗi trang
+        page_obj = paginator.get_page(page_number)
+
+        stock_map = _get_stock_map()
 
         return render(request, 'product/product_list.html', {
             'products': queryset,
             'categories': cat_service.get_list(),
+            'tong_so_luong': paginator.count,
+            'search_query': search_query,
+            'category_id': category_id,
+            'paginator': paginator,
+            'page_obj': page_obj,
+            'stock_map_json': __import__('json').dumps(stock_map),
         })
 
 
@@ -56,7 +80,14 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.add_product'
     raise_exception = True
 
-    def post_create(self, request):
+    def post(self, request):
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            service = ProductService()
+            service.create_product(form.cleaned_data)
+            messages.success(request, 'Tạo sản phẩm thành công!')
+        else:
+            messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
         from .validators import ProductValidator
         from middlewares.upload_middleware import xu_ly_va_luu_anh
         from .services import ProductService
@@ -108,6 +139,14 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
  
         service = ProductService()
         product = service.repository.get_by_id(pk)
+        form = ProductForm(request.POST, request.FILES, instance=product)
+
+        if form.is_valid():
+            service.repository.update(product, form.cleaned_data)
+            messages.success(request, 'Cập nhật sản phẩm thành công!')
+        else:
+            messages.error(request, 'Lỗi cập nhật. Vui lòng kiểm tra lại thông tin.')
+
         form_data = request.POST.dict()
         form_data.pop('csrfmiddlewaretoken', None)
  
@@ -154,7 +193,24 @@ class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.view_category'
     raise_exception = True
 
-    def post_category_create(self, request):
+    def get(self, request):
+        service = CategoryService()
+        categories = service.get_list()
+
+        return render(request, 'categories/category_list.html', {
+            'categories': categories,
+            'form': CategoryForm()
+        })
+
+    def post(self, request):
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            service = CategoryService()
+            category, msg = service.create_category(form.cleaned_data['name'])
+
+            if category:
+                messages.success(request, 'Đã thêm danh mục mới thành công!')
+            else:
         from .validators import CategoryValidator
         from .services import CategoryService
         from django.contrib import messages
@@ -172,8 +228,8 @@ class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if category:
             messages.success(request, 'Đã thêm danh mục mới thành công!')
         else:
-            messages.error(request, msg)
- 
+            messages.error(request, "Dữ liệu không hợp lệ, vui lòng kiểm tra lại.")
+
         return redirect('product:category_list')
 
 
@@ -235,7 +291,17 @@ class ProductUnitCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.add_productunit'
     raise_exception = True
 
-    def post_unit_create(self, request):
+    def post(self, request):
+        service = ProductService()
+        product_id = request.POST.get('product_id')
+        unit_name = request.POST.get('unit_name')
+        rate = request.POST.get('conversion_rate')
+
+        if not product_id or not unit_name or not rate:
+            messages.error(request, "Vui lòng nhập đầy đủ thông tin.")
+            return redirect('product:units_list')
+
+        unit, msg = service.add_new_unit_to_product(product_id, unit_name, rate)
         from .validators import ProductUnitValidator
         from .services import ProductService
         from django.contrib import messages
@@ -264,7 +330,6 @@ class ProductUnitCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
             messages.success(request, f"Đã thêm đơn vị {data['unit_name']} thành công.")
         else:
             messages.error(request, msg)
- 
         return redirect('product:units_list')
 
 
