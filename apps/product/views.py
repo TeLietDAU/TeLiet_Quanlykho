@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.core.paginator import Paginator
 from django.contrib import messages
 from django.http import JsonResponse
 
@@ -21,16 +20,13 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
         
         search_query = request.GET.get('search')
         category_id = request.GET.get('category')
-        trang_hien_tai = request.GET.get('trang', 1)
         
+        # Trả về TẤT CẢ sản phẩm (client-side pagination)
         queryset = service.get_all_products(search=search_query, category=category_id)
-        paginator = Paginator(queryset, 10)
-        page_obj = paginator.get_page(trang_hien_tai)
 
         return render(request, 'product/product_list.html', {
-            'products': page_obj,
+            'products': queryset,  # Toàn bộ dữ liệu
             'categories': cat_service.get_list(),
-            'tong_so_luong': paginator.count
         })
 
 class ProductDetailView(LoginRequiredMixin, PermissionRequiredMixin, View):
