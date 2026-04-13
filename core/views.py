@@ -147,3 +147,8 @@ def units_view(request):
         'Product_json': Product_data,
     }
     return render(request, 'units.html', context)
+
+
+@login_required
+def accounts_view(request):
+    return render(request, 'accounts.html', _base_context(request))

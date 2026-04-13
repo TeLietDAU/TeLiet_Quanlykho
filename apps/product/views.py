@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
+from django.core.paginator import Paginator
 
 from .forms import ProductForm, CategoryForm, ProductUnitForm
 from .services import ProductService, CategoryService
@@ -82,38 +83,25 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def post(self, request):
         form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            service = ProductService()
-            service.create_product(form.cleaned_data)
-            messages.success(request, 'Tạo sản phẩm thành công!')
-        else:
+        if not form.is_valid():
             messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
-        from .validators import ProductValidator
-        from middlewares.upload_middleware import xu_ly_va_luu_anh
-        from .services import ProductService
-        from django.contrib import messages
-        from django.shortcuts import redirect
- 
-        # 1. Validate trước khi làm bất cứ điều gì
-        errors = ProductValidator.validate_create(request.POST)
-        if errors:
-            for field, msg in errors.items():
-                messages.error(request, f'{msg}')
             return redirect('product:product_list')
- 
-        form_data = request.POST.dict()
-        form_data.pop('csrfmiddlewaretoken', None)
- 
-        # 2. Xử lý upload ảnh nếu có
-        file_anh = request.FILES.get('anh_san_pham')
+
+        form_data = {
+            'name': form.cleaned_data['name'],
+            'category': form.cleaned_data['category'],
+            'base_price': form.cleaned_data['base_price'],
+            'base_unit': form.cleaned_data['base_unit'],
+        }
+
+        file_anh = form.cleaned_data.get('anh_san_pham')
         if file_anh:
             try:
-                duong_dan_anh = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
-                form_data['image_url'] = duong_dan_anh
+                form_data['image_url'] = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
             except ValueError as e:
                 messages.error(request, f'Lỗi ảnh: {str(e)}')
                 return redirect('product:product_list')
- 
+
         service = ProductService()
         service.create_product(form_data)
         messages.success(request, 'Tạo sản phẩm thành công!')
@@ -124,45 +112,36 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.change_product'
     raise_exception = True
 
-    def post_update(self, request, pk):
-        from .validators import ProductValidator
-        from middlewares.upload_middleware import xu_ly_va_luu_anh, xoa_anh_cu
-        from .services import ProductService
-        from django.contrib import messages
-        from django.shortcuts import redirect
- 
-        errors = ProductValidator.validate_update(request.POST.dict())
-        if errors:
-            for field, msg in errors.items():
-                messages.error(request, msg)
-            return redirect('product:product_list')
- 
+    def get(self, request, pk):
+        return redirect('product:product_list')
+
+    def post(self, request, pk):
         service = ProductService()
         product = service.repository.get_by_id(pk)
         form = ProductForm(request.POST, request.FILES, instance=product)
 
-        if form.is_valid():
-            service.repository.update(product, form.cleaned_data)
-            messages.success(request, 'Cập nhật sản phẩm thành công!')
-        else:
+        if not form.is_valid():
             messages.error(request, 'Lỗi cập nhật. Vui lòng kiểm tra lại thông tin.')
+            return redirect('product:product_list')
 
-        form_data = request.POST.dict()
-        form_data.pop('csrfmiddlewaretoken', None)
- 
-        file_anh = request.FILES.get('anh_san_pham')
+        update_data = {
+            'name': form.cleaned_data['name'],
+            'category': form.cleaned_data['category'],
+            'base_price': form.cleaned_data['base_price'],
+            'base_unit': form.cleaned_data['base_unit'],
+            'image_url': product.image_url,
+        }
+
+        file_anh = form.cleaned_data.get('anh_san_pham')
         if file_anh:
             try:
                 xoa_anh_cu(product.image_url)
-                duong_dan_anh = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
-                form_data['image_url'] = duong_dan_anh
+                update_data['image_url'] = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
             except ValueError as e:
                 messages.error(request, f'Lỗi ảnh: {str(e)}')
                 return redirect('product:product_list')
-        else:
-            form_data['image_url'] = product.image_url
- 
-        service.repository.update(product, form_data)
+
+        service.repository.update(product, update_data)
         messages.success(request, 'Cập nhật sản phẩm thành công!')
         return redirect('product:product_list')
 
@@ -211,24 +190,9 @@ class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, View):
             if category:
                 messages.success(request, 'Đã thêm danh mục mới thành công!')
             else:
-        from .validators import CategoryValidator
-        from .services import CategoryService
-        from django.contrib import messages
-        from django.shortcuts import redirect
- 
-        data = {'name': request.POST.get('name', '')}
-        errors = CategoryValidator.validate_create(data)
-        if errors:
-            for field, msg in errors.items():
-                messages.error(request, msg)
-            return redirect('product:category_list')
- 
-        service = CategoryService()
-        category, msg = service.create_category(data['name'])
-        if category:
-            messages.success(request, 'Đã thêm danh mục mới thành công!')
+                messages.error(request, msg or 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
         else:
-            messages.error(request, "Dữ liệu không hợp lệ, vui lòng kiểm tra lại.")
+            messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
 
         return redirect('product:category_list')
 
