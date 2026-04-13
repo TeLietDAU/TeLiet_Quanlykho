@@ -40,9 +40,10 @@ INSTALLED_APPS = [
 
     # Apps của dự án
     'apps.authentication',
-    'apps.order',           # Đơn hàng, công nợ
+    'apps.order',                           # Đơn hàng, công nợ
     'apps.warehouse.apps.WarehouseConfig',  # Nhập kho, tồn kho
     'apps.product',
+    'apps.inventory.apps.InventoryConfig',  # Kiểm kê & Hao hụt
 ]
 
 # ============================================================
