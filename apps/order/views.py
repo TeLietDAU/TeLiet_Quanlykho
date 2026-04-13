@@ -8,8 +8,8 @@ from django.db.models import Q, Sum
 from django.core.paginator import Paginator
 
 from apps.product.models import Product
-from .services import SalesOrderService, CustomerDebtService
-from .models import SalesOrder, SalesOrderItem, CustomerDebt
+from .services import SalesOrderService
+from .models import SalesOrder, SalesOrderItem
 
 
 PAGE_SIZE = 5
@@ -60,16 +60,6 @@ def _get_sales_order_stats():
         'pending_orders': SalesOrder.objects.filter(status='WAITING').count(),
         'total_items': SalesOrderItem.objects.aggregate(total=Sum('quantity'))['total'] or 0,
         'today_transactions': SalesOrder.objects.filter(created_at__date=today).count(),
-    }
-
-
-def _get_debt_stats():
-    today = timezone.now().date()
-    return {
-        'total_orders': SalesOrder.objects.count(),
-        'pending_orders': SalesOrder.objects.filter(status='WAITING').count(),
-        'total_debt': CustomerDebt.objects.aggregate(total=Sum('remaining_amount'))['total'] or 0,
-        'today_transactions': CustomerDebt.objects.filter(created_at__date=today).count(),
     }
 
 
@@ -185,44 +175,3 @@ class SalesOrderDetailView(LoginRequiredMixin, View):
             'user_role': 'ADMIN' if request.user.is_superuser else request.user.role,
             'valid_transitions': SalesOrderService.VALID_TRANSITIONS.get(order.status, []),
         })
-
-
-class CustomerDebtListView(LoginRequiredMixin, View):
-    def get(self, request):
-        service = CustomerDebtService()
-        status_filter = request.GET.get('status', '')
-        search = request.GET.get('search', '')
-        page_number = request.GET.get('page', 1)
-
-        debts = service.get_all(status=status_filter or None, search=search or None)
-
-        paginator = Paginator(debts, PAGE_SIZE)
-        page_obj = paginator.get_page(page_number)
-
-        stats = service.get_stats()
-
-        return render(request, 'order/customer_debt_list.html', {
-            'debts': page_obj,
-            'page_obj': page_obj,
-            'paginator': paginator,
-            'status_filter': status_filter,
-            'search_query': search,
-            'user_role': request.user.role,
-            'stats': stats,
-        })
-
-    def post(self, request):
-        if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Bạn không có quyền cập nhật công nợ.')
-            return redirect('order:debt_list')
-
-        debt_id = request.POST.get('debt_id')
-        service = CustomerDebtService()
-        success, msg = service.mark_paid(debt_id)
-
-        if success:
-            messages.success(request, msg)
-        else:
-            messages.error(request, msg)
-
-        return redirect('order:debt_list')

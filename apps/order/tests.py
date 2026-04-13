@@ -5,8 +5,8 @@ from apps.product.models import Category, Product
 from apps.warehouse.models import ProductStock, ExportReceipt, ExportReceiptItem
 from apps.warehouse.repositories import ProductStockRepository, ExportReceiptRepository
 from apps.warehouse.services import ImportReceiptService, ExportReceiptService
-from apps.order.models import SalesOrder, SalesOrderItem, CustomerDebt
-from apps.order.services import SalesOrderService, CustomerDebtService
+from apps.order.models import SalesOrder, SalesOrderItem
+from apps.order.services import SalesOrderService
 
 
 class SalesOrderServiceTestCase(TestCase):

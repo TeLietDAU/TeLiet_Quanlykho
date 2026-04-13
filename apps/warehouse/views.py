@@ -1,4 +1,7 @@
 import json
+import uuid
+from datetime import datetime
+
 from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,7 +11,7 @@ from django.db.models import Sum, Q
 from django.core.paginator import Paginator
 
 from apps.product.models import Product
-from .services import ImportReceiptService, StockService, ExportReceiptService
+from .services import ImportReceiptService, StockService, StockReportService, ExportReceiptService
 from .models import ImportReceipt, ImportReceiptItem, ExportReceipt, ExportReceiptItem
 
 
@@ -222,6 +225,55 @@ class StockListView(LoginRequiredMixin, View):
             'page_obj': page_obj,
             'paginator': paginator,
             'search_query': search_query,
+            'user_role': 'ADMIN' if request.user.is_superuser else request.user.role,
+        })
+
+
+class StockReportView(LoginRequiredMixin, View):
+    def get(self, request):
+        service = StockReportService()
+
+        today = timezone.localdate()
+        first_day = today.replace(day=1)
+
+        from_date_str = request.GET.get('from_date', first_day.isoformat())
+        to_date_str = request.GET.get('to_date', today.isoformat())
+        raw_category_id = request.GET.get('category', '').strip()
+
+        category_id = ''
+        if raw_category_id:
+            try:
+                uuid.UUID(raw_category_id)
+                category_id = raw_category_id
+            except ValueError:
+                messages.error(request, 'Danh mục không hợp lệ. Hệ thống đã bỏ bộ lọc danh mục.')
+
+        try:
+            from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date()
+            to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            from_date = first_day
+            to_date = today
+            messages.error(request, 'Khoảng thời gian không hợp lệ. Hệ thống đã dùng mặc định tháng hiện tại.')
+
+        if from_date > to_date:
+            messages.warning(request, 'Ngày bắt đầu lớn hơn ngày kết thúc. Hệ thống đã tự hoán đổi lại khoảng thời gian.')
+            from_date, to_date = to_date, from_date
+
+        rows, totals = service.build_report(
+            from_date=from_date,
+            to_date=to_date,
+            category_id=category_id or None,
+        )
+
+        return render(request, 'warehouse/stock_report.html', {
+            'rows': rows,
+            'totals': totals,
+            'categories': service.get_categories(),
+            'from_date': from_date.isoformat(),
+            'to_date': to_date.isoformat(),
+            'category_id': category_id,
+            'generated_at': timezone.localtime(),
             'user_role': 'ADMIN' if request.user.is_superuser else request.user.role,
         })
 

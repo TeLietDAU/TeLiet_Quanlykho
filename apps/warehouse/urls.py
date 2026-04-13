@@ -20,4 +20,5 @@ urlpatterns = [
 
     # ── Tồn kho ───────────────────────────────────
     path('stock/', views.StockListView.as_view(), name='stock_list'),
+    path('stock/report/', views.StockReportView.as_view(), name='stock_report'),
 ]

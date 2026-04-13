@@ -1,10 +1,12 @@
 from django.test import TestCase
 from django.utils import timezone
+import uuid
+from datetime import timedelta
 from decimal import Decimal
 from apps.authentication.models import User
 from apps.product.models import Category, Product
 from apps.warehouse.models import ImportReceipt, ImportReceiptItem, ProductStock, ExportReceipt, ExportReceiptItem
-from apps.warehouse.services import ImportReceiptService, StockService, ExportReceiptService
+from apps.warehouse.services import ImportReceiptService, StockService, StockReportService, ExportReceiptService
 from apps.warehouse.repositories import ImportReceiptRepository, ProductStockRepository, ExportReceiptRepository
 
 
@@ -397,3 +399,99 @@ class ProductStockServiceTestCase(TestCase):
         # Lấy tất cả tồn kho
         all_stocks = self.service.get_all_stocks()
         self.assertEqual(all_stocks.count(), 2)
+
+
+class StockReportServiceTestCase(TestCase):
+    """Test báo cáo tồn kho theo thời gian (US-23)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin01', password='Admin@123', role='ADMIN')
+
+        self.cat_a = Category.objects.create(name='Nhóm A')
+        self.cat_b = Category.objects.create(name='Nhóm B')
+
+        self.product_a = Product.objects.create(
+            name='Sản phẩm A',
+            base_price=Decimal('10000'),
+            base_unit='Bao',
+            category=self.cat_a,
+        )
+        self.product_b = Product.objects.create(
+            name='Sản phẩm B',
+            base_price=Decimal('20000'),
+            base_unit='Bao',
+            category=self.cat_b,
+        )
+
+        self.service = StockReportService()
+
+    def _create_import(self, product, quantity, reviewed_at):
+        receipt = ImportReceipt.objects.create(
+            receipt_code=f'PN-TEST-{uuid.uuid4().hex[:10]}',
+            created_by=self.user,
+            reviewed_by=self.user,
+            status='APPROVED',
+            reviewed_at=reviewed_at,
+        )
+        ImportReceiptItem.objects.create(
+            receipt=receipt,
+            product=product,
+            quantity=Decimal(str(quantity)),
+            unit_price=Decimal('0'),
+        )
+
+    def _create_export(self, product, quantity, reviewed_at):
+        receipt = ExportReceipt.objects.create(
+            receipt_code=f'EX-TEST-{uuid.uuid4().hex[:10]}',
+            created_by=self.user,
+            reviewed_by=self.user,
+            status='APPROVED',
+            reviewed_at=reviewed_at,
+        )
+        ExportReceiptItem.objects.create(
+            receipt=receipt,
+            product=product,
+            quantity=Decimal(str(quantity)),
+            unit_price=Decimal('0'),
+        )
+
+    def test_build_report_by_time_range(self):
+        today = timezone.localdate()
+        from_date = today - timedelta(days=3)
+        to_date = today
+
+        before_period = timezone.now() - timedelta(days=4)
+        in_period = timezone.now() - timedelta(days=1)
+
+        # Lịch sử sản phẩm A:
+        # Trước kỳ: +100, -30 => tồn đầu = 70
+        # Trong kỳ: +20, -10 => tồn cuối = 80
+        self._create_import(self.product_a, 100, before_period)
+        self._create_export(self.product_a, 30, before_period)
+        self._create_import(self.product_a, 20, in_period)
+        self._create_export(self.product_a, 10, in_period)
+
+        rows, totals = self.service.build_report(from_date, to_date)
+
+        row_a = next(row for row in rows if row['product'].id == self.product_a.id)
+        self.assertEqual(row_a['opening'], Decimal('70'))
+        self.assertEqual(row_a['import_qty'], Decimal('20'))
+        self.assertEqual(row_a['export_qty'], Decimal('10'))
+        self.assertEqual(row_a['closing'], Decimal('80'))
+
+        self.assertEqual(totals['opening'], sum((r['opening'] for r in rows), Decimal('0')))
+        self.assertEqual(totals['closing'], sum((r['closing'] for r in rows), Decimal('0')))
+
+    def test_build_report_with_category_filter(self):
+        today = timezone.localdate()
+        from_date = today - timedelta(days=7)
+        to_date = today
+        in_period = timezone.now() - timedelta(days=1)
+
+        self._create_import(self.product_a, 50, in_period)
+        self._create_import(self.product_b, 70, in_period)
+
+        rows, _ = self.service.build_report(from_date, to_date, category_id=str(self.cat_a.id))
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['product'].id, self.product_a.id)
