@@ -5,7 +5,8 @@
 
 {% block extrastyle %}{{ block.super }}
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
         --bg: #0e0f11; --surface: #16181c; --surface2: #1e2126; --surface3: #252930;
@@ -16,7 +17,7 @@
     * { box-sizing: border-box; }
 
     /* ===== BODY ===== */
-    html, body { background: var(--bg) !important; font-family: 'DM Sans', sans-serif !important; color: var(--text) !important; margin: 0; padding: 0; }
+    html, body { background: var(--bg) !important; font-family: Google Sans Flex, sans-serif !important; color: var(--text) !important; margin: 0; padding: 0; }
 
     /* ===== HEADER → TOPBAR ===== */
     #header {
@@ -33,7 +34,7 @@
     #branding { display: flex; align-items: center; }
     #site-name { margin: 0; padding: 0; font-size: 16px; }
     #site-name a, #site-name a:visited {
-        font-family: 'Syne', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         font-weight: 800 !important;
         font-size: 16px !important;
         color: var(--text) !important;
@@ -54,7 +55,7 @@
     #user-tools form button {
         background: none !important; border: none !important;
         color: var(--accent) !important; font-size: 12px !important;
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         cursor: pointer !important; padding: 0 !important;
     }
     #user-tools form button:hover { color: var(--accent2) !important; }
@@ -82,7 +83,7 @@
         border-radius: 7px !important;
         color: var(--text) !important;
         font-size: 12px !important;
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         padding: 8px 12px !important;
         width: calc(100% - 24px) !important;
         margin: 12px !important;
@@ -107,7 +108,7 @@
         text-transform: uppercase !important;
         letter-spacing: 1.5px !important;
         padding: 8px 8px 4px !important;
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         font-weight: 600 !important;
     }
     #nav-sidebar .module caption a { color: var(--muted) !important; text-decoration: none !important; }
@@ -164,8 +165,8 @@
     #content { background: var(--bg) !important; padding: 28px !important; }
     #content-main { background: var(--bg) !important; }
     #content-related { background: var(--bg) !important; padding: 28px 0 28px 20px !important; min-width: 260px !important; }
-    #content h1 { font-family: 'Syne', sans-serif !important; font-size: 22px !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 20px !important; }
-    #content h2 { font-family: 'Syne', sans-serif !important; font-size: 16px !important; font-weight: 700 !important; color: var(--text) !important; }
+    #content h1 { font-family: Google Sans Flex, sans-serif !important; font-size: 22px !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 20px !important; }
+    #content h2 { font-family: Google Sans Flex, sans-serif !important; font-size: 16px !important; font-weight: 700 !important; color: var(--text) !important; }
 
     /* ===== MESSAGES ===== */
     ul.messagelist { padding: 0 !important; margin-bottom: 20px !important; list-style: none !important; }
@@ -177,13 +178,13 @@
 
     /* ===== MODULES ===== */
     .module { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; overflow: hidden !important; box-shadow: none !important; margin-bottom: 20px !important; }
-    .module h2, .module caption { background: var(--surface) !important; color: var(--text) !important; font-family: 'Syne', sans-serif !important; font-size: 13px !important; font-weight: 700 !important; padding: 14px 20px !important; display: block !important; text-align: left !important; width: 100% !important; border: none !important; box-shadow: none !important; margin: 0 !important; }
+    .module h2, .module caption { background: var(--surface) !important; color: var(--text) !important; font-family: Google Sans Flex, sans-serif !important; font-size: 13px !important; font-weight: 700 !important; padding: 14px 20px !important; display: block !important; text-align: left !important; width: 100% !important; border: none !important; box-shadow: none !important; margin: 0 !important; }
     .module caption a, .module caption a:visited { color: var(--text) !important; text-decoration: none !important; }
     .module caption a:hover { color: var(--accent) !important; }
     .module h3 { color: var(--muted) !important; font-size: 12px !important; padding: 8px 20px !important; border-bottom: 1px solid var(--border) !important; background: none !important; }
     .module table { width: 100% !important; border-collapse: collapse !important; caption-side: top !important; }
     .module caption { caption-side: top !important; }
-    .module table th { background: var(--surface) !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; font-size: 13px !important; text-transform: none !important; letter-spacing: 0 !important; padding: 14px 20px !important; font-weight: 600 !important; font-family: 'DM Sans', sans-serif !important; }
+    .module table th { background: var(--surface) !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; font-size: 13px !important; text-transform: none !important; letter-spacing: 0 !important; padding: 14px 20px !important; font-weight: 600 !important; font-family: Google Sans Flex, sans-serif !important; }
     .module table td { color: var(--muted2) !important; border-bottom: 1px solid var(--border) !important; padding: 14px 20px !important; font-size: 13px !important; background: var(--surface) !important; }
     .module table tr:last-child th,
     .module table tr:last-child td { border-bottom: none !important; }
@@ -205,7 +206,7 @@
     label.required::after { color: var(--danger) !important; }
     input[type="text"], input[type="email"], input[type="password"], input[type="number"],
     input[type="url"], input[type="date"], input[type="time"], input[type="search"],
-    textarea, select { background: var(--surface2) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text) !important; font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; padding: 10px 14px !important; outline: none !important; transition: border-color 0.15s !important; }
+    textarea, select { background: var(--surface2) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text) !important; font-family: Google Sans Flex, sans-serif !important; font-size: 13px !important; padding: 10px 14px !important; outline: none !important; transition: border-color 0.15s !important; }
     input:focus, textarea:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(232,164,39,0.08) !important; }
     textarea { min-height: 100px !important; resize: vertical !important; }
     .help, p.help { color: var(--muted) !important; font-size: 11px !important; }
@@ -215,7 +216,7 @@
 
     /* ===== SUBMIT ROW ===== */
     .submit-row { background: var(--surface2) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; padding: 16px 20px !important; box-shadow: none !important; display: flex !important; align-items: center !important; gap: 10px !important; flex-wrap: wrap !important; margin-top: 20px !important; }
-    .submit-row input[type="submit"] { background: var(--accent) !important; color: #0e0f11 !important; border: none !important; border-radius: 8px !important; padding: 10px 20px !important; font-family: 'Syne', sans-serif !important; font-size: 13px !important; font-weight: 700 !important; cursor: pointer !important; }
+    .submit-row input[type="submit"] { background: var(--accent) !important; color: #0e0f11 !important; border: none !important; border-radius: 8px !important; padding: 10px 20px !important; font-family: Google Sans Flex, sans-serif !important; font-size: 13px !important; font-weight: 700 !important; cursor: pointer !important; }
     .submit-row input[type="submit"]:hover { background: var(--accent2) !important; }
     .submit-row a.deletelink { background: rgba(239,68,68,0.12) !important; color: var(--danger) !important; border: 1px solid rgba(239,68,68,0.2) !important; border-radius: 8px !important; padding: 10px 20px !important; font-size: 13px !important; font-weight: 600 !important; text-decoration: none !important; margin-left: auto !important; }
     .submit-row a.deletelink:hover { background: rgba(239,68,68,0.2) !important; }
@@ -284,7 +285,7 @@
     .module table th a,
     .module table th a:visited {
         color: var(--text) !important;
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         font-weight: 600 !important;
         font-size: 13px !important;
         text-transform: none !important;
@@ -297,7 +298,7 @@
     #content-related .module h3,
     #recent-actions-module h3,
     div#content-related div.module h3 {
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         font-size: 11px !important;
         font-weight: 600 !important;
         color: var(--muted) !important;
@@ -313,7 +314,7 @@
         margin-top: 0 !important;
     }
     #content-related .module p {
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         font-size: 13px !important;
         color: var(--muted) !important;
         padding: 14px 20px !important;
@@ -349,7 +350,7 @@
         letter-spacing: 1px !important;
         padding: 10px 14px !important;
         border-bottom: 1px solid var(--border) !important;
-        font-family: 'DM Sans', sans-serif !important;
+        font-family: Google Sans Flex, sans-serif !important;
         font-weight: 600 !important;
     }
     .selector select {
@@ -425,7 +426,7 @@
     <a href="{% url 'admin:index' %}">
         <span style="display:inline-flex;align-items:center;gap:10px;">
             <span style="display:inline-block;width:28px;height:28px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);flex-shrink:0;"></span>
-            <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--text);">Te<span style="color:var(--accent);">Liet</span></span>
+            <span style="font-family:Arial,sans-serif;font-weight:800;font-size:16px;color:var(--text);">Te<span style="color:var(--accent);">Liet</span></span>
             <span style="font-size:11px;color:var(--muted);font-weight:400;">Admin</span>
         </span>
     </a>
