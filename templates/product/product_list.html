@@ -55,6 +55,7 @@
 .pg-btn:hover { background: var(--surface3); color: var(--text); }
 .pg-btn.active { background: var(--accent); border-color: var(--accent); color: #0e0f11; font-weight: 700; }
 .pg-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.pg-ellipsis { border: none; background: transparent; color: var(--muted); pointer-events: none; }
 {% endblock %}
 
 {% block content %}
@@ -182,13 +183,13 @@
       <span class="pg-btn disabled">‹</span>
       {% endif %}
 
-      {% for num in paginator.page_range %}
-        {% if num == page_obj.number %}
-          <span class="pg-btn active">{{ num }}</span>
-        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}" class="pg-btn">{{ num }}</a>
-        {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
-          <span class="pg-btn disabled" style="border:none;background:none;">…</span>
+      {% for item in pagination_items %}
+        {% if item == 'ellipsis' %}
+          <span class="pg-btn pg-ellipsis">…</span>
+        {% elif item == page_obj.number %}
+          <span class="pg-btn active">{{ item }}</span>
+        {% else %}
+          <a href="?page={{ item }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}" class="pg-btn">{{ item }}</a>
         {% endif %}
       {% endfor %}
 

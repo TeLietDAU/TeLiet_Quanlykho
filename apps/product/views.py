@@ -20,6 +20,31 @@ def _get_stock_map():
         return {str(s['product_id']): float(s['quantity']) for s in stocks}
     except Exception:
         return {}
+
+
+def _build_pagination_items(current_page, total_pages, window=1):
+    """Tạo danh sách phân trang dạng [1, 'ellipsis', 4, 5, 6, 'ellipsis', N]."""
+    if total_pages <= 0:
+        return []
+
+    pages = {1, total_pages}
+    for page_num in range(current_page - window, current_page + window + 1):
+        if 1 <= page_num <= total_pages:
+            pages.add(page_num)
+
+    sorted_pages = sorted(pages)
+    items = []
+    previous = None
+
+    for page_num in sorted_pages:
+        if previous is not None and page_num - previous > 1:
+            items.append('ellipsis')
+        items.append(page_num)
+        previous = page_num
+
+    return items
+
+
 # Import middleware upload mới
 from middlewares.upload_middleware import xu_ly_va_luu_anh, xoa_anh_cu
 from .validators import ProductValidator, CategoryValidator, ProductUnitValidator
@@ -47,17 +72,19 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         paginator = Paginator(queryset, 5)  # Hiển thị 5 sản phẩm mỗi trang
         page_obj = paginator.get_page(page_number)
+        pagination_items = _build_pagination_items(page_obj.number, paginator.num_pages, window=1)
 
         stock_map = _get_stock_map()
 
         return render(request, 'product/product_list.html', {
-            'products': queryset,
+            'products': page_obj.object_list,
             'categories': cat_service.get_list(),
             'tong_so_luong': paginator.count,
             'search_query': search_query,
             'category_id': category_id,
             'paginator': paginator,
             'page_obj': page_obj,
+            'pagination_items': pagination_items,
             'stock_map_json': __import__('json').dumps(stock_map),
         })
 
