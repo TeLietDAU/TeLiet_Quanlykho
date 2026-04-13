@@ -1,149 +1,380 @@
 """
-apps/inventory/services.py
-==========================
-Business Logic Layer for Inventory, Loss, and Reporting.
-
-Rules:
-- Validates inputs 
-- Handles business state checks
-- Exclusively uses the corresponding Repositories for data queries
-- Raises meaningful Python exceptions
+Business logic layer for inventory workflows.
 """
 
 from decimal import Decimal
-from django.core.exceptions import ValidationError
 
-from .repositories import InventoryRepository, LossRepository, ReportRepository
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+from apps.product.models import Product
+
 from .models import InventoryAudit, InventoryLoss
-from apps.warehouse.models import Product
+from .repositories import InventoryRepository, LossRepository, ReportRepository
 
 
 class InventoryService:
-    """Service handling business rules for Inventory Audits (Checks)."""
+    """Service handling business rules for InventoryAudit workflows."""
+
+    @staticmethod
+    def list_checks(status=None, search=None, date_from=None, date_to=None):
+        return InventoryRepository.list_checks(
+            status=status,
+            search=search,
+            date_from=date_from,
+            date_to=date_to,
+        )
 
     @staticmethod
     def create_check(audit_date, note, product_ids, user):
-        """
-        Validate inputs and orchestrate inventory check creation.
-        """
         if not product_ids:
-            raise ValidationError("Cần ít nhất 1 sản phẩm để thực hiện kiểm kê.")
-            
-        validated_products = list(Product.objects.filter(id__in=product_ids).values_list('id', flat=True))
+            raise ValidationError('Can it nhat 1 san pham de thuc hien kiem ke.')
+
+        product_ids = list(dict.fromkeys(str(pid) for pid in product_ids))
+        validated_products = list(
+            Product.objects.filter(id__in=product_ids).values_list('id', flat=True)
+        )
         if len(validated_products) != len(product_ids):
-            raise ValidationError("Có sản phẩm không hợp lệ hoặc đã bị xóa.")
+            raise ValidationError('Co san pham khong hop le hoac da bi xoa.')
 
         return InventoryRepository.create_check(
             audit_date=audit_date,
             note=note,
             product_ids=validated_products,
-            user=user
+            user=user,
         )
 
     @staticmethod
-    def approve_check(check_id, approved_by):
-        """Validate check state and approve it."""
+    def get_check_detail(check_id):
         audit = InventoryRepository.get_by_id(check_id)
         if not audit:
-            raise ValidationError("Không tìm thấy phiên kiểm kê.")
-            
+            raise ValidationError('Khong tim thay phien kiem ke.')
+
+        items = list(audit.items.select_related('product').all())
+        total_discrepancy = sum((item.discrepancy for item in items), Decimal('0'))
+
+        summary = {
+            'total_products': len(items),
+            'products_with_loss': sum(1 for item in items if item.discrepancy < 0),
+            'products_with_surplus': sum(1 for item in items if item.discrepancy > 0),
+            'total_discrepancy_qty': total_discrepancy,
+        }
+        return audit, items, summary
+
+    @staticmethod
+    def update_item_actual(check_id, item_id, actual_quantity, note=''):
+        audit = InventoryRepository.get_by_id(check_id)
+        if not audit:
+            raise ValidationError('Khong tim thay phien kiem ke.')
+
+        if audit.status != InventoryAudit.Status.DRAFT:
+            raise ValidationError('Chi phien o trang thai DRAFT moi duoc cap nhat so thuc te.')
+
+        item = InventoryRepository.update_item(
+            audit=audit,
+            item_id=item_id,
+            actual_quantity=actual_quantity,
+            note=note,
+        )
+        if not item:
+            raise ValidationError('Khong tim thay dong kiem ke can cap nhat.')
+
+        return item
+
+    @staticmethod
+    def submit_check(check_id):
+        audit = InventoryRepository.get_by_id(check_id)
+        if not audit:
+            raise ValidationError('Khong tim thay phien kiem ke.')
+
+        if audit.status != InventoryAudit.Status.DRAFT:
+            raise ValidationError('Chi phien DRAFT moi duoc nop duyet.')
+
+        return InventoryRepository.submit_check(audit)
+
+    @staticmethod
+    def approve_check(check_id, approved_by):
+        audit = InventoryRepository.get_by_id(check_id)
+        if not audit:
+            raise ValidationError('Khong tim thay phien kiem ke.')
+
         if audit.status != InventoryAudit.Status.SUBMITTED:
-            raise ValidationError(f"Không thể duyệt phiên ở trạng thái {audit.status}.")
+            raise ValidationError(f'Khong the duyet phien o trang thai {audit.status}.')
 
         return InventoryRepository.approve_check(audit, approved_by)
 
     @staticmethod
-    def get_check_discrepancy(check_id):
-        """Retrieve actual vs system discrepancies via Repository."""
+    def cancel_check(check_id, reason=''):
         audit = InventoryRepository.get_by_id(check_id)
         if not audit:
-            raise ValidationError("Không tìm thấy phiên kiểm kê.")
+            raise ValidationError('Khong tim thay phien kiem ke.')
+
+        if audit.status == InventoryAudit.Status.APPROVED:
+            raise ValidationError('Khong the huy phien da duoc duyet.')
+
+        if audit.status == InventoryAudit.Status.CANCELLED:
+            raise ValidationError('Phien da o trang thai huy.')
+
+        return InventoryRepository.cancel_check(audit, reason)
+
+    @staticmethod
+    def get_check_discrepancy(check_id):
+        audit = InventoryRepository.get_by_id(check_id)
+        if not audit:
+            raise ValidationError('Khong tim thay phien kiem ke.')
 
         discrepancies = InventoryRepository.get_discrepancy(check_id)
-        
-        # Enrich with additional business aggregations if needed
         result = []
-        for d in discrepancies:
-            item_discrepancy = d['calculated_discrepancy']
-            d['status_flag'] = 'SHORTAGE' if item_discrepancy < 0 else 'SURPLUS' if item_discrepancy > 0 else 'MATCH'
-            result.append(d)
-                
+        for item in discrepancies:
+            diff = item['calculated_discrepancy']
+            if diff < 0:
+                status_flag = 'SHORTAGE'
+            elif diff > 0:
+                status_flag = 'SURPLUS'
+            else:
+                status_flag = 'MATCH'
+
+            item['status_flag'] = status_flag
+            result.append(item)
+
         return result
 
 
 class LossService:
-    """Service handling business rules for Loss Tracking."""
+    """Service handling business rules for InventoryLoss workflows."""
 
     @staticmethod
-    def create_loss(product_id, loss_quantity, loss_type, loss_reason, loss_date, user, audit_item_id=None):
-        """
-        Validate and create loss records.
-        Applies strict classification validation.
-        """
-        if float(loss_quantity) <= 0:
-            raise ValidationError("Số lượng hao hụt phải luôn dương (>0).")
-            
+    def list_losses(loss_type=None, status=None, date_from=None, date_to=None, product_id=None, search=None):
+        return LossRepository.list_losses(
+            loss_type=loss_type,
+            status=status,
+            date_from=date_from,
+            date_to=date_to,
+            product_id=product_id,
+            search=search,
+        )
+
+    @staticmethod
+    def get_loss(loss_id):
+        loss = LossRepository.get_by_id(loss_id)
+        if not loss:
+            raise ValidationError('Khong tim thay phieu hao hut.')
+        return loss
+
+    @staticmethod
+    def create_loss(product_id, loss_quantity, loss_type, loss_reason, loss_date, user, audit_item_id=None, unit_cost=None):
+        if Decimal(str(loss_quantity)) <= 0:
+            raise ValidationError('So luong hao hut phai lon hon 0.')
+
         valid_types = [choice[0] for choice in InventoryLoss.LossType.choices]
         if loss_type not in valid_types:
-            raise ValidationError(f"Loại hao hụt không hợp lệ. Hỗ trợ: {', '.join(valid_types)}.")
-            
+            raise ValidationError(f'Loai hao hut khong hop le. Ho tro: {", ".join(valid_types)}.')
+
         if not loss_reason or len(loss_reason.strip()) < 5:
-            raise ValidationError("Vui lòng ghi chú lý do / hoàn cảnh hao hụt rõ ràng.")
+            raise ValidationError('Vui long mo ta ly do hao hut toi thieu 5 ky tu.')
 
         product = Product.objects.filter(id=product_id).first()
         if not product:
-            raise ValidationError("Không tìm thấy sản phẩm.")
+            raise ValidationError('Khong tim thay san pham.')
 
-        # Optionally validate audit_item linkage
         audit_item = None
         if audit_item_id:
             from .models import InventoryAuditItem
+
             audit_item = InventoryAuditItem.objects.filter(id=audit_item_id).first()
-            if not audit_item:
-                raise ValidationError("Liên kết dòng kiểm kê không hợp lệ.")
+            if audit_item is None:
+                raise ValidationError('Lien ket dong kiem ke khong hop le.')
+
+        final_unit_cost = Decimal(str(unit_cost)) if unit_cost is not None else product.base_price
 
         return LossRepository.create_loss(
             product_id=product_id,
             loss_quantity=loss_quantity,
             loss_type=loss_type,
-            loss_reason=loss_reason,
+            loss_reason=loss_reason.strip(),
             loss_date=loss_date,
-            unit_cost=product.base_price,
+            unit_cost=final_unit_cost,
             user=user,
-            audit_item=audit_item
+            audit_item=audit_item,
         )
+
+    @staticmethod
+    def update_loss(loss_id, loss_type=None, loss_reason=None):
+        loss = LossRepository.get_by_id(loss_id)
+        if not loss:
+            raise ValidationError('Khong tim thay phieu hao hut.')
+
+        if loss.status != InventoryLoss.Status.PENDING:
+            raise ValidationError('Chi phieu hao hut PENDING moi duoc cap nhat.')
+
+        if loss_type is not None:
+            valid_types = [choice[0] for choice in InventoryLoss.LossType.choices]
+            if loss_type not in valid_types:
+                raise ValidationError('Loai hao hut khong hop le.')
+
+        if loss_reason is not None and len(loss_reason.strip()) < 5:
+            raise ValidationError('Ly do hao hut phai co it nhat 5 ky tu.')
+
+        return LossRepository.update_loss(loss, loss_type=loss_type, loss_reason=loss_reason.strip() if loss_reason else loss_reason)
+
+    @staticmethod
+    def approve_loss(loss_id, reviewed_by):
+        loss = LossRepository.get_by_id(loss_id)
+        if not loss:
+            raise ValidationError('Khong tim thay phieu hao hut.')
+
+        if loss.status != InventoryLoss.Status.PENDING:
+            raise ValidationError('Chi phieu hao hut PENDING moi duoc duyet.')
+
+        return LossRepository.approve_loss(loss, reviewed_by)
+
+    @staticmethod
+    def reject_loss(loss_id, reviewed_by, rejection_note):
+        loss = LossRepository.get_by_id(loss_id)
+        if not loss:
+            raise ValidationError('Khong tim thay phieu hao hut.')
+
+        if loss.status != InventoryLoss.Status.PENDING:
+            raise ValidationError('Chi phieu hao hut PENDING moi duoc tu choi.')
+
+        if not rejection_note or len(rejection_note.strip()) < 3:
+            raise ValidationError('Vui long ghi ly do tu choi.')
+
+        return LossRepository.reject_loss(loss, reviewed_by, rejection_note.strip())
+
+    @staticmethod
+    def get_stats(date_from=None, date_to=None, loss_type=None, product_id=None):
+        by_type = list(
+            LossRepository.aggregate_by_type(
+                date_from=date_from,
+                date_to=date_to,
+                loss_type=loss_type,
+                product_id=product_id,
+            )
+        )
+        by_month = list(
+            LossRepository.aggregate_by_month(
+                date_from=date_from,
+                date_to=date_to,
+                loss_type=loss_type,
+                product_id=product_id,
+            )
+        )
+        top_products = list(
+            LossRepository.top_products(
+                date_from=date_from,
+                date_to=date_to,
+                loss_type=loss_type,
+                product_id=product_id,
+            )
+        )
+
+        type_labels = dict(InventoryLoss.LossType.choices)
+
+        return {
+            'by_type': [
+                {
+                    'loss_type': row['loss_type'],
+                    'label': type_labels.get(row['loss_type'], row['loss_type']),
+                    'count': row['count'],
+                    'total_quantity': row['total_quantity'],
+                    'total_value': row['total_value'],
+                }
+                for row in by_type
+            ],
+            'by_month': [
+                {
+                    'month': row['month'].strftime('%Y-%m') if row['month'] else '',
+                    'total_quantity': row['total_quantity'],
+                    'total_value': row['total_value'],
+                }
+                for row in by_month
+            ],
+            'top_products': [
+                {
+                    'product_id': row['product_id'],
+                    'product_name': row['product__name'],
+                    'total_quantity': row['total_quantity'],
+                    'total_value': row['total_value'],
+                }
+                for row in top_products
+            ],
+        }
 
 
 class ReportService:
-    """Service handling business metrics, percentages and reports."""
+    """Service for discrepancy and report summary payloads."""
 
     @staticmethod
     def generate_loss_report(date_from=None, date_to=None):
-        """
-        Generates grouped statistics on losses, calculating percentages
-        against the overall lost value in the given date range.
-        """
         summary = ReportRepository.get_report_summary(date_from=date_from, date_to=date_to)
         aggregations = list(ReportRepository.aggregate_loss_by_type(date_from=date_from, date_to=date_to))
 
         total_value = summary['total_loss_value'] or Decimal('0.00')
-
-        # Add metric percentage calculation locally based on retrieved values
+        result = []
         for agg in aggregations:
-            agg_val = agg['total_value'] or Decimal('0.00')
+            agg_value = agg['total_value'] or Decimal('0.00')
             if total_value > 0:
-                agg['percentage_of_total_cost'] = round((agg_val / total_value) * 100, 2)
+                percentage = round((agg_value / total_value) * 100, 2)
             else:
-                agg['percentage_of_total_cost'] = Decimal('0.00')
-            
-            # Formulate human readable type name
-            type_label = dict(InventoryLoss.LossType.choices).get(agg['loss_type'], 'Khác')
-            agg['type_label'] = type_label
+                percentage = Decimal('0.00')
+
+            result.append({
+                **agg,
+                'percentage_of_total_cost': percentage,
+                'type_label': dict(InventoryLoss.LossType.choices).get(agg['loss_type'], 'Khac'),
+            })
 
         return {
             'overall_summary': {
                 'total_audits_passed': summary['total_approved_audits'],
-                'total_impact_value': total_value
+                'total_impact_value': total_value,
             },
-            'breakdown_by_type': aggregations
+            'breakdown_by_type': result,
+        }
+
+    @staticmethod
+    def generate_discrepancy_report(product_id=None, category_id=None):
+        rows = ReportRepository.discrepancy_rows(product_id=product_id, category_id=category_id)
+
+        payload_rows = []
+        shortage_count = 0
+        surplus_count = 0
+        ok_count = 0
+
+        for row in rows:
+            discrepancy = row['discrepancy']
+            if discrepancy is None:
+                status = 'NO_AUDIT'
+            elif discrepancy < 0:
+                status = 'SHORTAGE'
+                shortage_count += 1
+            elif discrepancy > 0:
+                status = 'SURPLUS'
+                surplus_count += 1
+            else:
+                status = 'MATCH'
+                ok_count += 1
+
+            payload_rows.append({
+                'product_id': row['product'].id,
+                'product_name': row['product'].name,
+                'system_quantity': row['system_quantity'],
+                'reserved_quantity': row['reserved_quantity'],
+                'available_quantity': row['available_quantity'],
+                'last_audit_date': row['last_audit_date'],
+                'last_actual_qty': row['last_actual_qty'],
+                'discrepancy': discrepancy,
+                'discrepancy_pct': row['discrepancy_pct'],
+                'status': status,
+            })
+
+        return {
+            'generated_at': timezone.localtime(),
+            'items': payload_rows,
+            'summary': {
+                'shortage_count': shortage_count,
+                'surplus_count': surplus_count,
+                'ok_count': ok_count,
+            },
         }

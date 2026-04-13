@@ -98,6 +98,13 @@ class ProductStock(models.Model):
         validators=[MinValueValidator(0)],
         help_text="Số lượng tồn, không được âm"
     )
+    reserved_quantity = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Số lượng đang giữ cho đơn hàng chờ xuất"
+    )
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -105,6 +112,11 @@ class ProductStock(models.Model):
 
     def __str__(self):
         return f'{self.product.name}: {self.quantity} {self.product.base_unit}'
+
+    @property
+    def available_quantity(self):
+        """Tồn kho khả dụng = tồn thực tế - phần đang giữ chỗ."""
+        return self.quantity - self.reserved_quantity
 
 
 # ============================================================
@@ -134,6 +146,13 @@ class ExportReceipt(models.Model):
     )
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    sales_order = models.ForeignKey(
+        'order.SalesOrder',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='export_receipts',
+        help_text='Đơn hàng liên quan'
+    )
     note = models.TextField(blank=True, null=True, help_text='Lý do xuất kho')
     rejection_note = models.TextField(blank=True, null=True, help_text='Kế toán ghi lý do từ chối')
 

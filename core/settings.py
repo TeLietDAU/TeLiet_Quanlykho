@@ -164,6 +164,8 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+    # Allow business query param `format=excel|pdf` without DRF treating it as renderer override.
+    'URL_FORMAT_OVERRIDE': None,
 }
 
 # ============================================================

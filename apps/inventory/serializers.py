@@ -1,62 +1,110 @@
 """
-apps/inventory/serializers.py
-=============================
-Serializers to validate inbound request data.
+Request serializers for inventory APIs.
 """
 
+from decimal import Decimal
+
 from rest_framework import serializers
-from .models import InventoryLoss
+
+from .models import InventoryAudit, InventoryLoss
+
+
+class InventoryAuditFilterSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=InventoryAudit.Status.choices, required=False)
+    search = serializers.CharField(required=False, allow_blank=True)
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+
+    def validate(self, attrs):
+        date_from = attrs.get('date_from')
+        date_to = attrs.get('date_to')
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError({'date_to': 'Ngay ket thuc khong duoc nho hon ngay bat dau.'})
+        return attrs
 
 
 class InventoryCheckCreateSerializer(serializers.Serializer):
-    """Validator for creating an inventory audit."""
-    audit_date = serializers.DateField(
-        required=True, 
-        error_messages={'required': 'Ngày kiểm kê không được bỏ trống.'}
-    )
-    note = serializers.CharField(
-        required=False, allow_blank=True, default=''
-    )
+    audit_date = serializers.DateField(required=True)
+    note = serializers.CharField(required=False, allow_blank=True, default='')
     product_ids = serializers.ListField(
         child=serializers.UUIDField(),
         allow_empty=False,
-        error_messages={
-            'empty': 'Phải cung cấp ít nhất 1 sản phẩm để kiểm kê.',
-            'required': 'Danh sách định danh sản phẩm không được thiếu.'
-        }
     )
+
+
+class InventoryAuditItemUpdateSerializer(serializers.Serializer):
+    actual_quantity = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0'))
+    note = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class LossFilterSerializer(serializers.Serializer):
+    loss_type = serializers.ChoiceField(choices=InventoryLoss.LossType.choices, required=False)
+    status = serializers.ChoiceField(choices=InventoryLoss.Status.choices, required=False)
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+    product_id = serializers.UUIDField(required=False)
+    search = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        date_from = attrs.get('date_from')
+        date_to = attrs.get('date_to')
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError({'date_to': 'Ngay ket thuc khong duoc nho hon ngay bat dau.'})
+        return attrs
 
 
 class LossRecordCreateSerializer(serializers.Serializer):
-    """Validator for manually creating a loss ticket."""
     product_id = serializers.UUIDField(required=True)
-    loss_quantity = serializers.DecimalField(
-        max_digits=15, decimal_places=2, min_value=0.01,
-        error_messages={'min_value': 'Số lượng hao hụt phải luôn dương.'}
-    )
-    loss_type = serializers.ChoiceField(
-        choices=InventoryLoss.LossType.choices,
-        error_messages={'invalid_choice': 'Loại hao hụt không hợp lệ.'}
-    )
-    loss_reason = serializers.CharField(
-        min_length=5, required=True,
-        error_messages={'min_length': 'Lý do hao hụt quá ngắn (cần ít nhất 5 ký tự).'}
-    )
+    loss_quantity = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0.01'))
+    loss_type = serializers.ChoiceField(choices=InventoryLoss.LossType.choices)
+    loss_reason = serializers.CharField(min_length=5)
     loss_date = serializers.DateField(required=True)
+    unit_cost = serializers.DecimalField(max_digits=19, decimal_places=4, min_value=Decimal('0'), required=False)
     audit_item_id = serializers.UUIDField(required=False, allow_null=True)
 
 
-class ReportFilterSerializer(serializers.Serializer):
-    """Validator for query parameters triggering reports."""
-    date_from = serializers.DateField(required=False, allow_null=True)
-    date_to = serializers.DateField(required=False, allow_null=True)
+class LossRecordUpdateSerializer(serializers.Serializer):
+    loss_type = serializers.ChoiceField(choices=InventoryLoss.LossType.choices, required=False)
+    loss_reason = serializers.CharField(min_length=5, required=False)
 
-    def validate(self, data):
-        """Cross-validate dates making sure logic sequence is sound."""
-        date_from = data.get('date_from')
-        date_to = data.get('date_to')
+    def validate(self, attrs):
+        if 'loss_type' not in attrs and 'loss_reason' not in attrs:
+            raise serializers.ValidationError('Can it nhat 1 truong de cap nhat.')
+        return attrs
+
+
+class LossRejectSerializer(serializers.Serializer):
+    rejection_note = serializers.CharField(min_length=3)
+
+
+class ReportFilterSerializer(serializers.Serializer):
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+
+    def validate(self, attrs):
+        date_from = attrs.get('date_from')
+        date_to = attrs.get('date_to')
         if date_from and date_to and date_from > date_to:
-            raise serializers.ValidationError({
-                'date_to': 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu.'
-            })
-        return data
+            raise serializers.ValidationError({'date_to': 'Ngay ket thuc khong duoc nho hon ngay bat dau.'})
+        return attrs
+
+
+class DiscrepancyFilterSerializer(serializers.Serializer):
+    product_id = serializers.UUIDField(required=False)
+    category_id = serializers.UUIDField(required=False)
+
+
+class ExportRequestSerializer(serializers.Serializer):
+    format = serializers.ChoiceField(choices=['excel', 'pdf'], required=False, default='excel')
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+    loss_type = serializers.ChoiceField(choices=InventoryLoss.LossType.choices, required=False)
+    category_id = serializers.UUIDField(required=False)
+    audit_id = serializers.UUIDField(required=False)
+
+    def validate(self, attrs):
+        date_from = attrs.get('date_from')
+        date_to = attrs.get('date_to')
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError({'date_to': 'Ngay ket thuc khong duoc nho hon ngay bat dau.'})
+        return attrs
