@@ -39,16 +39,22 @@
     <h1 class="page-title">Tồn kho hiện tại</h1>
     <p class="page-sub">Cập nhật tự động khi nhập/xuất kho được duyệt</p>
   </div>
-  <form method="get" class="search-form">
-    <input type="text" name="search" placeholder="Tìm sản phẩm, danh mục..." value="{{ search_query }}">
-    <button type="submit">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Tìm
-    </button>
-    {% if search_query %}
-    <a href="?" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted2);text-decoration:none;font-size:12px;">✕ Xóa</a>
-    {% endif %}
-  </form>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'warehouse:stock_report' %}" class="btn btn-ghost">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+      Báo cáo theo thời gian
+    </a>
+    <form method="get" class="search-form">
+      <input type="text" name="search" placeholder="Tìm sản phẩm, danh mục..." value="{{ search_query }}">
+      <button type="submit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Tìm
+      </button>
+      {% if search_query %}
+      <a href="?" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted2);text-decoration:none;font-size:12px;">✕ Xóa</a>
+      {% endif %}
+    </form>
+  </div>
 </div>
 
 <!-- Cards grid -->

@@ -1,4 +1,9 @@
 from .repositories import ImportReceiptRepository, ProductStockRepository, ExportReceiptRepository
+from decimal import Decimal
+
+from apps.product.models import Category, Product
+
+from .models import ImportReceiptItem, ExportReceiptItem
 
 
 class ImportReceiptService:
@@ -96,6 +101,119 @@ class StockService:
 
     def get_stock_info(self, product_id):
         return ProductStockRepository.get_stock(product_id)
+
+
+class StockReportService:
+    """Báo cáo tồn kho theo thời gian (US-23)."""
+
+    @staticmethod
+    def get_categories():
+        return Category.objects.all().order_by('name')
+
+    @staticmethod
+    def _apply_export(balance, quantity):
+        # Đồng bộ với logic kho hiện tại: không để âm tồn.
+        updated = balance - quantity
+        return updated if updated > 0 else Decimal('0')
+
+    def build_report(self, from_date, to_date, category_id=None):
+        products_qs = Product.objects.select_related('category').all().order_by('name')
+        if category_id:
+            products_qs = products_qs.filter(category_id=category_id)
+
+        products = list(products_qs)
+        if not products:
+            zero = Decimal('0')
+            return [], {
+                'opening': zero,
+                'import_qty': zero,
+                'export_qty': zero,
+                'closing': zero,
+            }
+
+        product_ids = [p.id for p in products]
+
+        report_map = {}
+        balances = {}
+        for product in products:
+            report_map[product.id] = {
+                'product': product,
+                'opening': Decimal('0'),
+                'import_qty': Decimal('0'),
+                'export_qty': Decimal('0'),
+                'closing': Decimal('0'),
+            }
+            balances[product.id] = Decimal('0')
+
+        import_items = ImportReceiptItem.objects.filter(
+            product_id__in=product_ids,
+            receipt__status='APPROVED',
+            receipt__reviewed_at__date__lte=to_date,
+        ).values('product_id', 'quantity', 'receipt__reviewed_at')
+
+        export_items = ExportReceiptItem.objects.filter(
+            product_id__in=product_ids,
+            receipt__status='APPROVED',
+            receipt__reviewed_at__date__lte=to_date,
+        ).values('product_id', 'quantity', 'receipt__reviewed_at')
+
+        pre_period_events = []
+        in_period_events = []
+
+        for row in import_items:
+            event_date = row['receipt__reviewed_at'].date()
+            event = (row['receipt__reviewed_at'], row['product_id'], Decimal(str(row['quantity'])), 'IMPORT')
+            if event_date < from_date:
+                pre_period_events.append(event)
+            else:
+                in_period_events.append(event)
+
+        for row in export_items:
+            event_date = row['receipt__reviewed_at'].date()
+            event = (row['receipt__reviewed_at'], row['product_id'], Decimal(str(row['quantity'])), 'EXPORT')
+            if event_date < from_date:
+                pre_period_events.append(event)
+            else:
+                in_period_events.append(event)
+
+        pre_period_events.sort(key=lambda x: (x[0], 0 if x[3] == 'IMPORT' else 1))
+        in_period_events.sort(key=lambda x: (x[0], 0 if x[3] == 'IMPORT' else 1))
+
+        # Tính tồn đầu kỳ bằng cách replay các giao dịch trước kỳ.
+        for _, product_id, quantity, event_type in pre_period_events:
+            if event_type == 'IMPORT':
+                balances[product_id] += quantity
+            else:
+                balances[product_id] = self._apply_export(balances[product_id], quantity)
+
+        for product_id, row in report_map.items():
+            row['opening'] = balances[product_id]
+
+        # Tính nhập/xuất trong kỳ và tồn cuối kỳ.
+        for reviewed_at, product_id, quantity, event_type in in_period_events:
+            event_date = reviewed_at.date()
+            if event_date > to_date:
+                continue
+
+            if event_type == 'IMPORT':
+                report_map[product_id]['import_qty'] += quantity
+                balances[product_id] += quantity
+            else:
+                report_map[product_id]['export_qty'] += quantity
+                balances[product_id] = self._apply_export(balances[product_id], quantity)
+
+        for product_id, row in report_map.items():
+            row['closing'] = balances[product_id]
+
+        rows = [report_map[product.id] for product in products]
+
+        totals = {
+            'opening': sum((row['opening'] for row in rows), Decimal('0')),
+            'import_qty': sum((row['import_qty'] for row in rows), Decimal('0')),
+            'export_qty': sum((row['export_qty'] for row in rows), Decimal('0')),
+            'closing': sum((row['closing'] for row in rows), Decimal('0')),
+        }
+        return rows, totals
 
 
 class ExportReceiptService:
