@@ -63,7 +63,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True, write_only=True)
     new_password = serializers.CharField(required=True, write_only=True, min_length=6)
-    new_password_confirm = serializers.CharField(required=True, write_only=True, min_length=6)
+    # Backward compatible: older clients only send old_password/new_password.
+    new_password_confirm = serializers.CharField(required=False, write_only=True, min_length=6, allow_blank=False)
 
     def validate_new_password(self, value):
         if len(value) < 6:
@@ -73,7 +74,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
     
     def validate(self, data):
-        if data.get('new_password') != data.get('new_password_confirm'):
+        new_password_confirm = data.get('new_password_confirm')
+        if new_password_confirm is not None and data.get('new_password') != new_password_confirm:
             raise serializers.ValidationError({"new_password": "Mật khẩu mới không khớp."})
         return data
 

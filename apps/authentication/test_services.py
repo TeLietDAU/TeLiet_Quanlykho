@@ -1,4 +1,3 @@
-import pytest
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import authenticate
 from .models import User

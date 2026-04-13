@@ -39,7 +39,7 @@ def _products_json():
 def _stocks_json():
     from apps.warehouse.repositories import ProductStockRepository
     stocks = ProductStockRepository.get_all()
-    return {str(s.product_id): float(s.quantity) for s in stocks}
+    return {str(s.product_id): float(s.available_quantity) for s in stocks}
 
 
 def _parse_items_from_post(post_data):
@@ -213,7 +213,7 @@ class SalesOrderListView(LoginRequiredMixin, View):
         order, errors = service.create_order(customer_name, customer_phone, note, items_data, user)
 
         if order:
-            messages.success(request, f'Đơn hàng {order.order_code} đã được tạo. Tồn kho đã được trừ tự động.')
+            messages.success(request, f'Đơn hàng {order.order_code} đã được tạo thành công.')
         else:
             for err in errors:
                 messages.error(request, err['message'])

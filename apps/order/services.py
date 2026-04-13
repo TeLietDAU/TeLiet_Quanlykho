@@ -1,5 +1,6 @@
 from .repositories import SalesOrderRepository
 from decimal import Decimal
+from django.db import transaction
 
 class SalesOrderService:
 
@@ -75,13 +76,68 @@ class SalesOrderService:
             new_label = status_labels.get(new_status, new_status)
             return False, f'Không thể chuyển từ "{current_label}" sang "{new_label}".'
 
-        SalesOrderRepository.update_status(order, new_status)
+        with transaction.atomic():
+            # Đơn ở WAITING phải giữ chỗ tồn kho trước khi tạo phiếu xuất.
+            if new_status == 'WAITING':
+                can_reserve, reserve_message = self._reserve_stock_for_order(order)
+                if not can_reserve:
+                    return False, reserve_message
 
-        # Khi chuyển sang "Chờ lấy hàng" → tự động tạo phiếu xuất kho
-        if new_status == 'WAITING' and updated_by is not None:
-            self._create_export_receipt_for_order(order, updated_by)
+            SalesOrderRepository.update_status(order, new_status)
+
+            if new_status == 'WAITING':
+                if updated_by is None:
+                    self._release_reserved_stock_for_order(order)
+                    order.status = 'CONFIRMED'
+                    order.save(update_fields=['status'])
+                    return False, 'Thiếu người thực hiện để tạo phiếu xuất.'
+
+                created, create_message = self._create_export_receipt_for_order(order, updated_by)
+                if not created:
+                    self._release_reserved_stock_for_order(order)
+                    order.status = 'CONFIRMED'
+                    order.save(update_fields=['status'])
+                    return False, create_message
 
         return True, 'Cập nhật trạng thái thành công.'
+
+    def _reserve_stock_for_order(self, order):
+        from apps.warehouse.models import ProductStock
+
+        items = list(order.items.select_related('product').all())
+        shortage_messages = []
+
+        for item in items:
+            stock, _ = ProductStock.objects.select_for_update().get_or_create(
+                product=item.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0}
+            )
+            if stock.available_quantity < item.quantity:
+                shortage_messages.append(
+                    f'"{item.product.name}" chỉ còn khả dụng {stock.available_quantity}, cần {item.quantity}.'
+                )
+
+        if shortage_messages:
+            return False, ' ; '.join(shortage_messages)
+
+        for item in items:
+            stock = ProductStock.objects.select_for_update().get(product=item.product)
+            stock.reserved_quantity += item.quantity
+            stock.save(update_fields=['reserved_quantity', 'last_updated'])
+
+        return True, None
+
+    def _release_reserved_stock_for_order(self, order):
+        from apps.warehouse.models import ProductStock
+
+        for item in order.items.select_related('product').all():
+            stock, _ = ProductStock.objects.select_for_update().get_or_create(
+                product=item.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0}
+            )
+            released = item.quantity if stock.reserved_quantity >= item.quantity else stock.reserved_quantity
+            stock.reserved_quantity -= released
+            stock.save(update_fields=['reserved_quantity', 'last_updated'])
 
     def _create_export_receipt_for_order(self, order, user):
         """Tạo phiếu xuất kho tự động từ đơn hàng khi chuyển sang Chờ lấy hàng"""
@@ -97,10 +153,12 @@ class SalesOrderService:
         ]
         receipt_data = {
             'note': f'Xuất hàng cho đơn {order.order_code} — KH: {order.customer_name}',
+            'sales_order_id': order.id,
         }
         try:
             ExportReceiptRepository.create_with_items(receipt_data, items_data, user)
+            return True, None
         except Exception as e:
-            # Không block luồng chính nếu tạo phiếu thất bại
             import logging
             logging.getLogger(__name__).error(f'Lỗi tạo phiếu xuất cho đơn {order.order_code}: {e}')
+            return False, 'Không thể tạo phiếu xuất tự động cho đơn hàng.'
