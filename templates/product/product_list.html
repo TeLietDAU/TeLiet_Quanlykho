@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 .product-img { width: 40px; height: 40px; background: var(--surface3); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.product-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
 .product-info { display: flex; align-items: center; gap: 12px; }
 .badge.stock-ok { background: rgba(34,197,94,0.12); color: var(--success); }
 .badge.stock-low { background: rgba(245,158,11,0.12); color: var(--warning); }
@@ -122,7 +123,11 @@
         <td class="bold">
           <div class="product-info">
             <div class="product-img">
+              {% if p.image_url %}
+              <img src="{{ p.image_url }}" alt="{{ p.name }}">
+              {% else %}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              {% endif %}
             </div>
             {{ p.name }}
           </div>
@@ -226,7 +231,7 @@
 </div>
 
 <div class="modal-backdrop" id="modal-form">
-  <form class="modal" id="product-form" method="POST" action="{% url 'product:product_create' %}">
+  <form class="modal" id="product-form" method="POST" action="{% url 'product:product_create' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="modal-header">
       <span class="modal-title" id="modal-title">Thêm vật liệu mới</span>
@@ -260,6 +265,11 @@
         <label class="field-label">Tồn tối thiểu</label>
         <input type="number" id="f-min-stock" placeholder="10">
       </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Ảnh sản phẩm</label>
+      <input type="file" id="f-image" name="anh_san_pham" accept="image/jpeg,image/png,image/webp">
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Tùy chọn: JPG, PNG, WEBP (tối đa 5MB).</div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-ghost" onclick="closeModal()">Hủy</button>
@@ -304,6 +314,9 @@ function openModal(type, id, name, catId, unit, price) {
   const form = document.getElementById('product-form');
   const title = document.getElementById('modal-title');
   const btnSubmit = document.getElementById('btn-submit');
+  const imageInput = document.getElementById('f-image');
+
+  if (imageInput) imageInput.value = '';
 
   if (type === 'create') {
     title.textContent = 'Thêm vật liệu mới';
