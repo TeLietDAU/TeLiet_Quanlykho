@@ -5,8 +5,8 @@
 {% block nav_products %}active{% endblock %}
 
 {% block extra_css %}
-.product-img { width: 40px; height: 40px; background: var(--surface3); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-.product-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.product-img { width: 75px; height: 75px; background: var(--surface3); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.product-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
 .product-info { display: flex; align-items: center; gap: 12px; }
 .badge.stock-ok { background: rgba(34,197,94,0.12); color: var(--success); }
 .badge.stock-low { background: rgba(245,158,11,0.12); color: var(--warning); }
@@ -48,7 +48,6 @@
 .cat-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; text-decoration: none; border: 1px solid var(--border); background: var(--surface); color: var(--muted2); transition: all .15s; }
 .cat-pill:hover { background: var(--surface2); color: var(--text); }
 .cat-pill.active { background: rgba(232,164,39,.12); border-color: rgba(232,164,39,.3); color: var(--accent); }
-/* Pagination — đồng bộ với các trang khác */
 .pagination-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--border); }
 .pagination { display: flex; gap: 4px; }
 .pg-btn { min-width: 32px; height: 32px; padding: 0 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: var(--muted2); text-decoration: none; transition: all .15s; }
@@ -56,6 +55,14 @@
 .pg-btn.active { background: var(--accent); border-color: var(--accent); color: #0e0f11; font-weight: 700; }
 .pg-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 .pg-ellipsis { border: none; background: transparent; color: var(--muted); pointer-events: none; }
+.current-image-wrap { display: none; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); }
+.current-image-wrap.show { display: flex; }
+.current-image-wrap img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+.current-image-meta { font-size: 12px; color: var(--muted2); }
+.image-preview-wrap { display: none; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); }
+.image-preview-wrap.show { display: flex; }
+.image-preview-wrap img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+.image-preview-meta { font-size: 12px; color: var(--muted2); }
 {% endblock %}
 
 {% block content %}
@@ -95,7 +102,6 @@
   </div>
 </div>
 
-<!-- Category filter pills -->
 <div class="cat-pills">
   <a href="?{% if search_query %}search={{ search_query }}{% endif %}" class="cat-pill {% if not category_id %}active{% endif %}">Tất cả</a>
   {% for cat in categories %}
@@ -109,6 +115,7 @@
   <table>
     <thead>
       <tr>
+        <th>Ảnh</th>
         <th>Vật liệu</th>
         <th>Danh mục</th>
         <th>Đơn vị</th>
@@ -121,18 +128,16 @@
     <tbody id="product-tbody">
       {% for p in products %}
       <tr data-product-id="{{ p.id }}">
-        <td class="bold">
-          <div class="product-info">
-            <div class="product-img">
-              {% if p.image_url %}
-              <img src="{{ p.image_url }}" alt="{{ p.name }}">
-              {% else %}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-              {% endif %}
-            </div>
-            {{ p.name }}
+        <td>
+          <div class="product-img">
+            {% if p.image_url %}
+            <img src="{{ p.image_url }}" alt="{{ p.name }}">
+            {% else %}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            {% endif %}
           </div>
         </td>
+        <td class="bold">{{ p.name }}</td>
         <td>{{ p.category.name|default:"Chưa phân loại" }}</td>
         <td>{{ p.base_unit }}</td>
         <td class="bold">{{ p.base_price|floatformat:0 }}đ</td>
@@ -145,7 +150,7 @@
         <td style="text-align:right">
           <div style="display:flex;justify-content:flex-end;gap:8px;">
             {% if perms.product.change_product %}
-            <button class="action-btn" onclick="openModal('edit','{{ p.id }}','{{ p.name|escapejs }}','{{ p.category_id|default_if_none:"" }}','{{ p.base_unit|escapejs }}','{{ p.base_price }}')">
+            <button class="action-btn" onclick="openModal('edit','{{ p.id }}','{{ p.name|escapejs }}','{{ p.category_id|default_if_none:"" }}','{{ p.base_unit|escapejs }}','{{ p.base_price|stringformat:"f" }}','{{ p.image_url|default_if_none:""|escapejs }}')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             {% endif %}
@@ -159,7 +164,7 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="7" style="text-align:center;padding:48px;color:var(--muted);">
+        <td colspan="8" style="text-align:center;padding:48px;color:var(--muted);">
           {% if search_query %}
             Không tìm thấy sản phẩm nào khớp với "<strong style="color:var(--text)">{{ search_query }}</strong>"
           {% else %}
@@ -263,13 +268,21 @@
         <input type="number" id="f-price" name="base_price" required placeholder="0">
       </div>
       <div class="field">
-        <label class="field-label">Tồn tối thiểu</label>
-        <input type="number" id="f-min-stock" placeholder="10">
+        <label class="field-label">Tồn kho hiện tại</label>
+        <input type="text" id="f-stock" value="—" readonly>
       </div>
     </div>
     <div class="field">
       <label class="field-label">Ảnh sản phẩm</label>
+      <div id="current-image-wrap" class="current-image-wrap">
+        <img id="current-image" src="" alt="Ảnh hiện tại">
+        <div class="current-image-meta">Ảnh hiện tại của vật liệu.</div>
+      </div>
       <input type="file" id="f-image" name="anh_san_pham" accept="image/jpeg,image/png,image/webp">
+      <div id="image-preview-wrap" class="image-preview-wrap">
+        <img id="image-preview" src="" alt="Ảnh thay thế">
+        <div class="image-preview-meta">Ảnh thay thế sẽ được lưu khi cập nhật.</div>
+      </div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px;">Tùy chọn: JPG, PNG, WEBP (tối đa 5MB).</div>
     </div>
     <div class="modal-footer">
@@ -311,18 +324,38 @@ function renderStockStatus() {
 
 renderStockStatus();
 
-function openModal(type, id, name, catId, unit, price) {
+function normalizePriceValue(rawPrice) {
+  if (rawPrice === undefined || rawPrice === null) return '';
+  const text = String(rawPrice).trim();
+  if (!text) return '';
+  const num = Number(text);
+  if (!Number.isNaN(num)) {
+    return Number.isInteger(num) ? String(num) : String(num);
+  }
+  return text.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+}
+
+function openModal(type, id, name, catId, unit, price, imageUrl='') {
   const form = document.getElementById('product-form');
   const title = document.getElementById('modal-title');
   const btnSubmit = document.getElementById('btn-submit');
   const imageInput = document.getElementById('f-image');
+  const currentImageWrap = document.getElementById('current-image-wrap');
+  const currentImage = document.getElementById('current-image');
+  const previewWrap = document.getElementById('image-preview-wrap');
+  const previewImage = document.getElementById('image-preview');
 
   if (imageInput) imageInput.value = '';
+  previewWrap.classList.remove('show');
+  previewImage.removeAttribute('src');
+  currentImageWrap.classList.remove('show');
+  currentImage.removeAttribute('src');
 
   if (type === 'create') {
     title.textContent = 'Thêm vật liệu mới';
     btnSubmit.textContent = 'Lưu thông tin';
     form.reset();
+    document.getElementById('f-stock').value = '—';
     form.action = "{% url 'product:product_create' %}";
   } else {
     title.textContent = 'Chỉnh sửa vật liệu';
@@ -330,7 +363,13 @@ function openModal(type, id, name, catId, unit, price) {
     document.getElementById('f-name').value = name;
     document.getElementById('f-category').value = catId;
     document.getElementById('f-unit').value = unit;
-    document.getElementById('f-price').value = price;
+    document.getElementById('f-price').value = normalizePriceValue(price);
+    const stockVal = STOCK_MAP[id];
+    document.getElementById('f-stock').value = (stockVal !== undefined && stockVal !== null) ? `${stockVal}` : 'Chưa nhập';
+    if (imageUrl) {
+      currentImage.src = imageUrl;
+      currentImageWrap.classList.add('show');
+    }
     let updateUrl = "{% url 'product:product_update' pk='00000000-0000-0000-0000-000000000000' %}";
     form.action = updateUrl.replace('00000000-0000-0000-0000-000000000000', id);
   }
@@ -338,6 +377,25 @@ function openModal(type, id, name, catId, unit, price) {
 }
 
 function closeModal() { document.getElementById('modal-form').classList.remove('open'); }
+
+document.getElementById('f-image').addEventListener('change', function(event) {
+  const file = event.target.files && event.target.files[0];
+  const previewWrap = document.getElementById('image-preview-wrap');
+  const previewImage = document.getElementById('image-preview');
+
+  if (!file) {
+    previewWrap.classList.remove('show');
+    previewImage.removeAttribute('src');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    previewImage.src = e.target.result;
+    previewWrap.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+});
 
 function deleteProduct(id, name) {
   document.getElementById('confirm-desc').textContent = `Sản phẩm "${name}" sẽ bị xóa vĩnh viễn.`;

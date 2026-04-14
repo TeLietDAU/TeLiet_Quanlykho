@@ -7,7 +7,6 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.core.paginator import Paginator
-
 from .forms import ProductForm, CategoryForm, ProductUnitForm
 from .services import ProductService, CategoryService
 
@@ -73,9 +72,8 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
         paginator = Paginator(queryset, 5)  # Hiển thị 5 sản phẩm mỗi trang
         page_obj = paginator.get_page(page_number)
         pagination_items = _build_pagination_items(page_obj.number, paginator.num_pages, window=1)
-
         stock_map = _get_stock_map()
-
+        
         return render(request, 'product/product_list.html', {
             'products': page_obj.object_list,
             'categories': cat_service.get_list(),
