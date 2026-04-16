@@ -1,13 +1,13 @@
-from .repositories import SalesOrderRepository, CustomerDebtRepository
-from decimal import Decimal
+﻿from decimal import Decimal
+
+from .repositories import CustomerDebtRepository, SalesOrderRepository
+
 
 class SalesOrderService:
-
-    # Luồng trạng thái HỢP LỆ — chỉ đi 1 chiều, không quay lại
     VALID_TRANSITIONS = {
         'CONFIRMED': ['WAITING', 'CANCELLED'],
-        'WAITING':   ['DONE', 'CANCELLED'],
-        'DONE':      [],
+        'WAITING': ['DONE', 'CANCELLED'],
+        'DONE': [],
         'CANCELLED': [],
     }
 
@@ -24,28 +24,24 @@ class SalesOrderService:
         return SalesOrderRepository.get_by_user(user)
 
     def create_order(self, customer_name, customer_phone, note, items_data, user):
-        """
-        Sale tạo đơn hàng.
-        Hệ thống tự kiểm tra kho và trừ ngay nếu đủ.
-        Trả về (order, None) hoặc (None, errors_list)
-        """
         if not customer_name or not customer_name.strip():
-            return None, [{'message': 'Vui lòng nhập tên khách hàng.'}]
+            return None, [{'message': 'Vui long nhap ten khach hang.'}]
 
         if not items_data:
-            return None, [{'message': 'Đơn hàng phải có ít nhất 1 sản phẩm.'}]
+            return None, [{'message': 'Don hang phai co it nhat 1 san pham.'}]
 
         cleaned_items = []
-        for idx, item in enumerate(items_data):
+        for index, item in enumerate(items_data):
             if not item.get('product_id'):
-                return None, [{'message': f'Dòng {idx+1}: chưa chọn sản phẩm.'}]
+                return None, [{'message': f'Dong {index + 1}: chua chon san pham.'}]
             try:
-                qty = Decimal(str(item.get('quantity', 0)))
-            except (ValueError, TypeError):
-                return None, [{'message': f'Dòng {idx+1}: số lượng không hợp lệ.'}]
-            if qty <= 0:
-                return None, [{'message': f'Dòng {idx+1}: số lượng phải lớn hơn 0.'}]
-            item['quantity'] = qty
+                quantity = Decimal(str(item.get('quantity', 0)))
+            except (ValueError, TypeError, ArithmeticError):
+                return None, [{'message': f'Dong {index + 1}: so luong khong hop le.'}]
+            if quantity <= 0:
+                return None, [{'message': f'Dong {index + 1}: so luong phai lon hon 0.'}]
+
+            item['quantity'] = quantity
             cleaned_items.append(item)
 
         order_data = {
@@ -53,61 +49,61 @@ class SalesOrderService:
             'customer_phone': customer_phone.strip() if customer_phone else '',
             'note': note or '',
         }
-
-        order, errors = SalesOrderRepository.create_with_items(order_data, cleaned_items, user)
-        return order, errors
+        return SalesOrderRepository.create_with_items(order_data, cleaned_items, user)
 
     def update_status(self, order_id, new_status, updated_by=None):
         order = SalesOrderRepository.get_by_id(order_id)
         if not order:
-            return False, 'Không tìm thấy đơn hàng.'
+            return False, 'Khong tim thay don hang.'
 
-        # Kiểm tra luồng hợp lệ
-        allowed = self.VALID_TRANSITIONS.get(order.status, [])
-        if new_status not in allowed:
-            status_labels = {
-                'CONFIRMED': 'Đã xác nhận',
-                'WAITING': 'Chờ lấy hàng',
-                'DONE': 'Hoàn thành',
-                'CANCELLED': 'Đã hủy',
+        allowed_transitions = self.VALID_TRANSITIONS.get(order.status, [])
+        if new_status not in allowed_transitions:
+            labels = {
+                'CONFIRMED': 'Da xac nhan',
+                'WAITING': 'Cho lay hang',
+                'DONE': 'Hoan thanh',
+                'CANCELLED': 'Da huy',
             }
-            current_label = status_labels.get(order.status, order.status)
-            new_label = status_labels.get(new_status, new_status)
-            return False, f'Không thể chuyển từ "{current_label}" sang "{new_label}".'
+            current_label = labels.get(order.status, order.status)
+            new_label = labels.get(new_status, new_status)
+            return False, f'Khong the chuyen tu "{current_label}" sang "{new_label}".'
 
         SalesOrderRepository.update_status(order, new_status)
 
-        # Khi chuyển sang "Chờ lấy hàng" → tự động tạo phiếu xuất kho
         if new_status == 'WAITING' and updated_by is not None:
             self._create_export_receipt_for_order(order, updated_by)
 
-        return True, 'Cập nhật trạng thái thành công.'
+        return True, 'Cap nhat trang thai thanh cong.'
 
     def _create_export_receipt_for_order(self, order, user):
-        """Tạo phiếu xuất kho tự động từ đơn hàng khi chuyển sang Chờ lấy hàng"""
         from apps.warehouse.repositories import ExportReceiptRepository
+
         items_data = [
             {
                 'product_id': str(item.product_id),
-                'quantity': float(item.quantity),
-                'unit_price': float(item.unit_price),
-                'note': f'Đơn hàng {order.order_code}',
+                'quantity': item.quantity,
+                'unit_price': item.unit_price,
+                'note': f'Don hang {order.order_code}',
             }
             for item in order.items.select_related('product').all()
         ]
         receipt_data = {
-            'note': f'Xuất hàng cho đơn {order.order_code} — KH: {order.customer_name}',
+            'note': f'Xuat hang cho don {order.order_code} - KH: {order.customer_name}',
+            'sales_order': order,
         }
         try:
             ExportReceiptRepository.create_with_items(receipt_data, items_data, user)
-        except Exception as e:
-            # Không block luồng chính nếu tạo phiếu thất bại
+        except Exception as exc:
             import logging
-            logging.getLogger(__name__).error(f'Lỗi tạo phiếu xuất cho đơn {order.order_code}: {e}')
+
+            logging.getLogger(__name__).error(
+                'Loi tao phieu xuat cho don %s: %s',
+                order.order_code,
+                exc,
+            )
 
 
 class CustomerDebtService:
-
     def __init__(self):
         self.repo = CustomerDebtRepository()
 
@@ -121,26 +117,29 @@ class CustomerDebtService:
         return CustomerDebtRepository.get_pending_debts()
 
     def create_debt(self, sales_order, customer_name, remaining_amount, due_date=None, note=None):
-        data = {
-            'sales_order': sales_order,
-            'customer_name': customer_name,
-            'remaining_amount': remaining_amount,
-            'due_date': due_date,
-            'note': note or '',
-        }
-        return CustomerDebtRepository.create(data)
+        return CustomerDebtRepository.create(
+            {
+                'sales_order': sales_order,
+                'customer_name': customer_name,
+                'remaining_amount': remaining_amount,
+                'due_date': due_date,
+                'note': note or '',
+            }
+        )
 
     def mark_paid(self, debt_id):
         debt = CustomerDebtRepository.get_by_id(debt_id)
         if not debt:
-            return False, 'Không tìm thấy công nợ.'
+            return False, 'Khong tim thay cong no.'
         CustomerDebtRepository.update_status(debt, 'PAID')
-        return True, 'Đã đánh dấu thanh toán.'
+        return True, 'Da danh dau thanh toan.'
+
     def get_stats(self):
-        from django.utils import timezone
         from django.db.models import Sum
-        from .models import SalesOrder, CustomerDebt
-        
+        from django.utils import timezone
+
+        from .models import CustomerDebt, SalesOrder
+
         today = timezone.now().date()
         return {
             'total_orders': SalesOrder.objects.count(),

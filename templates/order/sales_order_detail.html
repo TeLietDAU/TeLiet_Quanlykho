@@ -36,7 +36,7 @@
   </div>
   <div class="info-box">
     <div class="info-label">Người tạo</div>
-    <div class="info-value">{{ order.created_by.full_name|default:order.created_by.username }}</div>
+    <div class="info-value">{{ order.created_by.role_slug }}</div>
     <div style="font-size:12px;color:var(--muted2);margin-top:3px;">{{ order.created_at|date:"d/m/Y H:i" }}</div>
   </div>
   <div class="info-box">

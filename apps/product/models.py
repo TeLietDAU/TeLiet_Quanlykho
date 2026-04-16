@@ -1,7 +1,10 @@
 import uuid
+from decimal import Decimal
+
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MinLengthValidator, URLValidator
+from django.db.models import Sum
 
 
 # ============================================================
@@ -63,6 +66,41 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def stock_quantity(self):
+        stock = getattr(self, 'stock', None)
+        return stock.quantity if stock else Decimal('0')
+
+    @property
+    def stock_status(self):
+        from apps.warehouse.stock_utils import get_stock_status
+
+        return get_stock_status(self.stock_quantity)
+
+    @property
+    def stock_status_label(self):
+        from apps.warehouse.stock_utils import get_stock_status_label
+
+        return get_stock_status_label(self.stock_quantity)
+
+    @property
+    def total_imported_quantity(self):
+        return self.import_items.filter(receipt__status='APPROVED').aggregate(
+            total=Sum('quantity')
+        )['total'] or Decimal('0')
+
+    @property
+    def total_exported_quantity(self):
+        return self.export_items.filter(receipt__status='APPROVED').aggregate(
+            total=Sum('quantity')
+        )['total'] or Decimal('0')
+
+    @property
+    def total_ordered_quantity(self):
+        return self.order_sales_items.aggregate(
+            total=Sum('quantity')
+        )['total'] or Decimal('0')
 
 
 # ============================================================

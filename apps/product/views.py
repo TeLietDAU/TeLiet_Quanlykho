@@ -1,18 +1,21 @@
 """
-apps/product/views.py - CẬP NHẬT để xử lý upload ảnh sản phẩm
-Thay thế file cũ bằng file này.
+apps/product/views.py - updated for product and stock display.
 """
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator
-from .forms import ProductForm, CategoryForm, ProductUnitForm
-from .services import ProductService, CategoryService
+from django.shortcuts import redirect, render
+from django.views import View
+
+from middlewares.upload_middleware import xu_ly_va_luu_anh, xoa_anh_cu
+
+from .forms import CategoryForm, ProductForm
+from .services import CategoryService, ProductService
+from .validators import ProductUnitValidator
 
 
 def _get_stock_map():
-    """Lấy dict {product_id: quantity} từ tồn kho"""
+    """Lay dict {product_id: quantity} tu ton kho, mac dinh 0."""
     try:
         from apps.warehouse.models import ProductStock
         stocks = ProductStock.objects.all().values('product_id', 'quantity')
@@ -22,7 +25,6 @@ def _get_stock_map():
 
 
 def _build_pagination_items(current_page, total_pages, window=1):
-    """Tạo danh sách phân trang dạng [1, 'ellipsis', 4, 5, 6, 'ellipsis', N]."""
     if total_pages <= 0:
         return []
 
@@ -34,24 +36,14 @@ def _build_pagination_items(current_page, total_pages, window=1):
     sorted_pages = sorted(pages)
     items = []
     previous = None
-
     for page_num in sorted_pages:
         if previous is not None and page_num - previous > 1:
             items.append('ellipsis')
         items.append(page_num)
         previous = page_num
-
     return items
 
 
-# Import middleware upload mới
-from middlewares.upload_middleware import xu_ly_va_luu_anh, xoa_anh_cu
-from .validators import ProductValidator, CategoryValidator, ProductUnitValidator
-
-
-# ==========================================
-# 1. QUẢN LÝ SẢN PHẨM (PRODUCT)
-# ==========================================
 class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.view_product'
     raise_exception = True
@@ -66,14 +58,16 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         queryset = service.get_all_products(
             search=search_query if search_query else None,
-            category=category_id if category_id else None
+            category=category_id if category_id else None,
         )
 
-        paginator = Paginator(queryset, 5)  # Hiển thị 5 sản phẩm mỗi trang
+        paginator = Paginator(queryset, 5)
         page_obj = paginator.get_page(page_number)
         pagination_items = _build_pagination_items(page_obj.number, paginator.num_pages, window=1)
         stock_map = _get_stock_map()
-        
+        for product in page_obj.object_list:
+            stock_map.setdefault(str(product.id), 0)
+
         return render(request, 'product/product_list.html', {
             'products': page_obj.object_list,
             'categories': cat_service.get_list(),
@@ -98,7 +92,7 @@ class ProductDetailView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         return render(request, 'product/detail.html', {
             'product': product,
-            'units': units
+            'units': units,
         })
 
 
@@ -109,7 +103,7 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def post(self, request):
         form = ProductForm(request.POST, request.FILES)
         if not form.is_valid():
-            messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
+            messages.error(request, 'Du lieu khong hop le, vui long kiem tra lai.')
             return redirect('product:product_list')
 
         form_data = {
@@ -123,13 +117,12 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if file_anh:
             try:
                 form_data['image_url'] = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
-            except ValueError as e:
-                messages.error(request, f'Lỗi ảnh: {str(e)}')
+            except ValueError as exc:
+                messages.error(request, f'Loi anh: {exc}')
                 return redirect('product:product_list')
 
-        service = ProductService()
-        service.create_product(form_data)
-        messages.success(request, 'Tạo sản phẩm thành công!')
+        ProductService().create_product(form_data)
+        messages.success(request, 'Tao san pham thanh cong!')
         return redirect('product:product_list')
 
 
@@ -146,7 +139,7 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
         form = ProductForm(request.POST, request.FILES, instance=product)
 
         if not form.is_valid():
-            messages.error(request, 'Lỗi cập nhật. Vui lòng kiểm tra lại thông tin.')
+            messages.error(request, 'Loi cap nhat. Vui long kiem tra lai thong tin.')
             return redirect('product:product_list')
 
         update_data = {
@@ -162,12 +155,12 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
             try:
                 xoa_anh_cu(product.image_url)
                 update_data['image_url'] = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
-            except ValueError as e:
-                messages.error(request, f'Lỗi ảnh: {str(e)}')
+            except ValueError as exc:
+                messages.error(request, f'Loi anh: {exc}')
                 return redirect('product:product_list')
 
         service.repository.update(product, update_data)
-        messages.success(request, 'Cập nhật sản phẩm thành công!')
+        messages.success(request, 'Cap nhat san pham thanh cong!')
         return redirect('product:product_list')
 
 
@@ -180,19 +173,15 @@ class ProductDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
         product = service.repository.get_by_id(pk)
 
         if product:
-            # Xóa ảnh khi xóa sản phẩm (dọn dẹp file trên server)
             xoa_anh_cu(product.image_url)
             service.repository.delete(product)
-            messages.warning(request, 'Đã xóa sản phẩm thành công.')
+            messages.warning(request, 'Da xoa san pham thanh cong.')
         else:
-            messages.error(request, 'Không tìm thấy sản phẩm để xóa.')
+            messages.error(request, 'Khong tim thay san pham de xoa.')
 
         return redirect('product:product_list')
 
 
-# ==========================================
-# 2. QUẢN LÝ DANH MỤC (CATEGORY)
-# ==========================================
 class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.view_category'
     raise_exception = True
@@ -200,25 +189,21 @@ class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def get(self, request):
         service = CategoryService()
         categories = service.get_list()
-
         return render(request, 'categories/category_list.html', {
             'categories': categories,
-            'form': CategoryForm()
+            'form': CategoryForm(),
         })
 
     def post(self, request):
         form = CategoryForm(request.POST)
         if form.is_valid():
-            service = CategoryService()
-            category, msg = service.create_category(form.cleaned_data['name'])
-
+            category, msg = CategoryService().create_category(form.cleaned_data['name'])
             if category:
-                messages.success(request, 'Đã thêm danh mục mới thành công!')
+                messages.success(request, 'Da them danh muc moi thanh cong!')
             else:
-                messages.error(request, msg or 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
+                messages.error(request, msg or 'Du lieu khong hop le, vui long kiem tra lai.')
         else:
-            messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
-
+            messages.error(request, 'Du lieu khong hop le, vui long kiem tra lai.')
         return redirect('product:category_list')
 
 
@@ -233,10 +218,9 @@ class CategoryUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         if name:
             service.repository.update(category, name)
-            messages.success(request, 'Cập nhật danh mục thành công!')
+            messages.success(request, 'Cap nhat danh muc thanh cong!')
         else:
-            messages.error(request, 'Tên danh mục không được để trống.')
-
+            messages.error(request, 'Ten danh muc khong duoc de trong.')
         return redirect('product:category_list')
 
 
@@ -249,17 +233,13 @@ class CategoryDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
         category = service.repository.get_by_id(pk)
 
         if category.products.exists():
-            messages.error(request, 'Không thể xóa danh mục đang có sản phẩm!')
+            messages.error(request, 'Khong the xoa danh muc dang co san pham!')
         else:
             service.repository.delete(category)
-            messages.warning(request, 'Đã xóa danh mục.')
-
+            messages.warning(request, 'Da xoa danh muc.')
         return redirect('product:category_list')
 
 
-# ==========================================
-# 3. QUẢN LÝ ĐƠN VỊ TÍNH (PRODUCT UNIT)
-# ==========================================
 class ProductUnitListView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'product.view_productunit'
     raise_exception = True
@@ -268,11 +248,10 @@ class ProductUnitListView(LoginRequiredMixin, PermissionRequiredMixin, View):
         service = ProductService()
         units = service.unit_repository.get_all()
         products = service.repository.get_all()
-
         return render(request, 'units/unit_list.html', {
             'units': units,
             'products': products,
-            'title': 'Quản lý Đơn vị & Quy đổi'
+            'title': 'Quan ly Don vi & Quy doi',
         })
 
 
@@ -281,42 +260,26 @@ class ProductUnitCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     raise_exception = True
 
     def post(self, request):
-        service = ProductService()
-        product_id = request.POST.get('product_id')
-        unit_name = request.POST.get('unit_name')
-        rate = request.POST.get('conversion_rate')
-
-        if not product_id or not unit_name or not rate:
-            messages.error(request, "Vui lòng nhập đầy đủ thông tin.")
-            return redirect('product:units_list')
-
-        unit, msg = service.add_new_unit_to_product(product_id, unit_name, rate)
-        from .validators import ProductUnitValidator
-        from .services import ProductService
-        from django.contrib import messages
-        from django.shortcuts import redirect
- 
         data = {
             'unit_name': request.POST.get('unit_name', ''),
             'conversion_rate': request.POST.get('conversion_rate', ''),
             'product_id': request.POST.get('product_id', ''),
         }
- 
+
         errors = ProductUnitValidator.validate_create(data)
         if errors:
-            for field, msg in errors.items():
-                messages.error(request, msg)
+            for message in errors.values():
+                messages.error(request, message)
             return redirect('product:units_list')
- 
-        service = ProductService()
-        unit, msg = service.add_new_unit_to_product(
+
+        unit, msg = ProductService().add_new_unit_to_product(
             data['product_id'],
             data['unit_name'],
             data['conversion_rate'],
         )
- 
+
         if unit:
-            messages.success(request, f"Đã thêm đơn vị {data['unit_name']} thành công.")
+            messages.success(request, f"Da them don vi {data['unit_name']} thanh cong.")
         else:
             messages.error(request, msg)
         return redirect('product:units_list')
@@ -331,7 +294,7 @@ class ProductUnitUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
         unit = service.unit_repository.get_by_id(pk)
 
         if not unit:
-            messages.error(request, "Không tìm thấy đơn vị tính.")
+            messages.error(request, 'Khong tim thay don vi tinh.')
             return redirect('product:units_list')
 
         unit_name = request.POST.get('unit_name')
@@ -340,12 +303,11 @@ class ProductUnitUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if unit_name and conversion_rate:
             service.unit_repository.update(unit, {
                 'unit_name': unit_name,
-                'conversion_rate': conversion_rate
+                'conversion_rate': conversion_rate,
             })
-            messages.success(request, 'Cập nhật thành công!')
+            messages.success(request, 'Cap nhat thanh cong!')
         else:
-            messages.error(request, 'Vui lòng điền đủ thông tin.')
-
+            messages.error(request, 'Vui long dien du thong tin.')
         return redirect('product:units_list')
 
 
@@ -355,10 +317,8 @@ class ProductUnitDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def post(self, request, pk):
         service = ProductService()
-
         if service.unit_repository.delete(pk):
-            messages.warning(request, 'Đã xóa đơn vị tính thành công.')
+            messages.warning(request, 'Da xoa don vi tinh thanh cong.')
         else:
-            messages.error(request, 'Không tìm thấy đơn vị tính để xóa.')
-
+            messages.error(request, 'Khong tim thay don vi tinh de xoa.')
         return redirect('product:units_list')

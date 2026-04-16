@@ -48,6 +48,16 @@ class User(AbstractUser):
     class Meta:
         db_table = 'users'
 
+    @property
+    def role_slug(self):
+        mapping = {
+            'ADMIN': 'admin',
+            'SALE': 'sale',
+            'KHO': 'kho',
+            'KE_TOAN': 'ketoan',
+        }
+        return mapping.get(self.role, (self.role or '').lower())
+
     def save(self, *args, **kwargs):
         # 1. Lưu user trước để đảm bảo có ID (đặc biệt quan trọng với UUID)
         is_new = self._state.adding
