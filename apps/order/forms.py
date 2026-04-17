@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import SalesOrder, CustomerDebt, WarehouseTransaction
+from .models import SalesOrder, WarehouseTransaction
 
 
 CONTROL_CLASS = 'search-input'
@@ -55,52 +55,6 @@ class SalesOrderForm(forms.ModelForm):
         amount = self.cleaned_data.get('total_amount')
         if amount and amount < 0:
             raise ValidationError("Tổng tiền không được âm.")
-        return amount
-
-
-class CustomerDebtForm(forms.ModelForm):
-    """Form tạo/sửa công nợ khách hàng"""
-    
-    class Meta:
-        model = CustomerDebt
-        fields = ['customer_name', 'remaining_amount', 'due_date', 'status']
-        labels = {
-            'customer_name': 'Tên khách hàng',
-            'remaining_amount': 'Số tiền còn nợ',
-            'due_date': 'Ngày thanh toán',
-            'status': 'Trạng thái'
-        }
-        widgets = {
-            'customer_name': forms.TextInput(attrs={
-                'class': CONTROL_CLASS,
-                'placeholder': 'Tên khách hàng'
-            }),
-            'remaining_amount': forms.NumberInput(attrs={
-                'class': CONTROL_CLASS,
-                'step': '0.01',
-                'min': '0'
-            }),
-            'due_date': forms.DateTimeInput(attrs={
-                'class': CONTROL_CLASS,
-                'type': 'datetime-local'
-            }),
-            'status': forms.Select(attrs={'class': CONTROL_CLASS})
-        }
-    
-    def clean_customer_name(self):
-        name = self.cleaned_data.get('customer_name')
-        if name and len(name) < 2:
-            raise ValidationError("Tên khách hàng phải có ít nhất 2 ký tự.")
-        if name and len(name) > 100:
-            raise ValidationError("Tên khách hàng không được vượt quá 100 ký tự.")
-        return name
-    
-    def clean_remaining_amount(self):
-        amount = self.cleaned_data.get('remaining_amount')
-        if amount and amount < 0:
-            raise ValidationError("Số tiền còn nợ không được âm.")
-        if amount and amount > 9999999999:
-            raise ValidationError("Số tiền quá lớn.")
         return amount
 
 

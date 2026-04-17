@@ -97,48 +97,6 @@ class SalesOrderItem(models.Model):
     @property
     def subtotal(self):
         return self.quantity * self.unit_price
-
-
-# ============================================================
-# CÔNG NỢ KHÁCH HÀNG
-# ============================================================
-class CustomerDebt(models.Model):
-    STATUS_CHOICES = [
-        ('PENDING', 'Chưa thanh toán'),
-        ('PAID', 'Đã thanh toán'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    sales_order = models.ForeignKey(
-        SalesOrder, on_delete=models.CASCADE, related_name='debts'
-    )
-    customer_name = models.CharField(max_length=200)
-    remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-#     id = models.BigAutoField(primary_key=True)
-#     sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='order_debts')
-#     customer_name = models.CharField(
-#         max_length=100,
-#         validators=[MinLengthValidator(2)],
-#         help_text="Tên khách hàng, tối thiểu 2 ký tự"
-#     )
-#     remaining_amount = models.DecimalField(
-#         max_digits=15,
-#         decimal_places=2,
-#         default=0,
-#         validators=[MinValueValidator(0)],
-#         help_text="Số tiền còn nợ, không được âm"
-#     )
-    due_date = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
-    note = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'customer_debts'
-        ordering = ['due_date']
-
-    def __str__(self):
-        return f'{self.customer_name} — còn {self.remaining_amount}'
 # class WarehouseTransaction(models.Model):
 #     id = models.BigAutoField(primary_key=True)
 #     code = models.CharField(

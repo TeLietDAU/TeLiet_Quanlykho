@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SalesOrder, CustomerDebt, WarehouseTransaction, Warehouse
+from .models import SalesOrder, WarehouseTransaction, Warehouse
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
@@ -39,28 +39,6 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     def validate_total_amount(self, value):
         if value < 0:
             raise serializers.ValidationError("Tổng tiền không được âm.")
-        return value
-
-
-class CustomerDebtSerializer(serializers.ModelSerializer):
-    """Serializer cho công nợ khách hàng"""
-    
-    class Meta:
-        model = CustomerDebt
-        fields = ['id', 'sales_order', 'customer_name', 'remaining_amount', 'due_date', 'status']
-    
-    def validate_customer_name(self, value):
-        if value and len(value) < 2:
-            raise serializers.ValidationError("Tên khách hàng phải có ít nhất 2 ký tự.")
-        if value and len(value) > 100:
-            raise serializers.ValidationError("Tên khách hàng không được vượt quá 100 ký tự.")
-        return value
-    
-    def validate_remaining_amount(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Số tiền còn nợ không được âm.")
-        if value > 9999999999:
-            raise serializers.ValidationError("Số tiền quá lớn.")
         return value
 
 

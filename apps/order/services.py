@@ -1,6 +1,6 @@
 ﻿from decimal import Decimal
 
-from .repositories import CustomerDebtRepository, SalesOrderRepository
+from .repositories import SalesOrderRepository
 
 
 class SalesOrderService:
@@ -101,49 +101,3 @@ class SalesOrderService:
                 order.order_code,
                 exc,
             )
-
-
-class CustomerDebtService:
-    def __init__(self):
-        self.repo = CustomerDebtRepository()
-
-    def get_all(self, status=None, search=None):
-        return CustomerDebtRepository.get_all(status=status, search_customer=search)
-
-    def get_by_id(self, debt_id):
-        return CustomerDebtRepository.get_by_id(debt_id)
-
-    def get_pending(self):
-        return CustomerDebtRepository.get_pending_debts()
-
-    def create_debt(self, sales_order, customer_name, remaining_amount, due_date=None, note=None):
-        return CustomerDebtRepository.create(
-            {
-                'sales_order': sales_order,
-                'customer_name': customer_name,
-                'remaining_amount': remaining_amount,
-                'due_date': due_date,
-                'note': note or '',
-            }
-        )
-
-    def mark_paid(self, debt_id):
-        debt = CustomerDebtRepository.get_by_id(debt_id)
-        if not debt:
-            return False, 'Khong tim thay cong no.'
-        CustomerDebtRepository.update_status(debt, 'PAID')
-        return True, 'Da danh dau thanh toan.'
-
-    def get_stats(self):
-        from django.db.models import Sum
-        from django.utils import timezone
-
-        from .models import CustomerDebt, SalesOrder
-
-        today = timezone.now().date()
-        return {
-            'total_orders': SalesOrder.objects.count(),
-            'pending_orders': SalesOrder.objects.filter(status='WAITING').count(),
-            'total_debt': CustomerDebt.objects.filter(status='PENDING').aggregate(total=Sum('remaining_amount'))['total'] or 0,
-            'today_transactions': CustomerDebt.objects.filter(created_at__date=today).count(),
-        }

@@ -116,7 +116,7 @@ class ImportReceiptListView(LoginRequiredMixin, View):
 
     def post(self, request):
         if request.user.role not in ('KHO', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen tao phieu nhap kho.')
+            messages.error(request, 'Bạn không có quyền tạo phiếu nhập kho.')
             return redirect('warehouse:import_list')
 
         receipt, error = ImportReceiptService().create_receipt(
@@ -125,7 +125,7 @@ class ImportReceiptListView(LoginRequiredMixin, View):
             request.user,
         )
         if receipt:
-            messages.success(request, f'Da tao phieu nhap {receipt.receipt_code} thanh cong. Dang cho duyet.')
+            messages.success(request, f'Đã tạo phiếu nhập {receipt.receipt_code} thành công. Đang chờ duyệt.')
         else:
             messages.error(request, error)
         return redirect('warehouse:import_list')
@@ -139,17 +139,17 @@ class ImportReceiptExcelTemplateView(LoginRequiredMixin, View):
 class ImportReceiptExcelUploadView(LoginRequiredMixin, View):
     def post(self, request):
         if request.user.role not in ('KHO', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen import phieu nhap kho.')
+            messages.error(request, 'Bạn không có quyền import phiếu nhập kho.')
             return redirect('warehouse:import_list')
 
         uploaded_file = request.FILES.get('excel_file')
         if not uploaded_file:
-            messages.error(request, 'Vui long chon file Excel.')
+            messages.error(request, 'Vui lòng chọn file Excel.')
             return redirect('warehouse:import_list')
 
         try:
             receipts = ImportReceiptService().import_receipts_from_excel(uploaded_file, request.user)
-            messages.success(request, f'Da import {len(receipts)} phieu nhap tu Excel.')
+            messages.success(request, f'Đã import {len(receipts)} phiếu nhập từ Excel.')
         except ValueError as exc:
             messages.error(request, str(exc))
         return redirect('warehouse:import_list')
@@ -171,7 +171,7 @@ class ImportReceiptDetailView(LoginRequiredMixin, View):
     def get(self, request, pk):
         receipt = ImportReceiptService().get_by_id(pk)
         if not receipt:
-            messages.error(request, 'Khong tim thay phieu nhap kho.')
+            messages.error(request, 'Không tìm thấy phiếu nhập kho.')
             return redirect('warehouse:import_list')
 
         return render(
@@ -188,7 +188,7 @@ class ImportReceiptDetailView(LoginRequiredMixin, View):
 class ImportReceiptApproveView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen duyet phieu.')
+            messages.error(request, 'Bạn không có quyền duyệt phiếu.')
             return redirect('warehouse:import_list')
 
         success, message = ImportReceiptService().approve_receipt(pk, request.user)
@@ -199,7 +199,7 @@ class ImportReceiptApproveView(LoginRequiredMixin, View):
 class ImportReceiptRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen tu choi phieu.')
+            messages.error(request, 'Bạn không có quyền từ chối phiếu.')
             return redirect('warehouse:import_list')
 
         success, message = ImportReceiptService().reject_receipt(
@@ -214,7 +214,7 @@ class ImportReceiptRejectView(LoginRequiredMixin, View):
 class ImportReceiptResubmitView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if request.user.role not in ('KHO', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen gui lai phieu.')
+            messages.error(request, 'Bạn không có quyền gửi lại phiếu.')
             return redirect('warehouse:import_list')
 
         receipt, error = ImportReceiptService().resubmit_receipt(
@@ -224,7 +224,7 @@ class ImportReceiptResubmitView(LoginRequiredMixin, View):
             request.user,
         )
         if receipt:
-            messages.success(request, f'Da gui lai phieu {receipt.receipt_code}. Dang cho duyet.')
+            messages.success(request, f'Đã gửi lại phiếu {receipt.receipt_code}. Đang chờ duyệt.')
         else:
             messages.error(request, error)
         return redirect('warehouse:import_list')
@@ -298,7 +298,7 @@ class ExportReceiptListView(LoginRequiredMixin, View):
 
     def post(self, request):
         if request.user.role not in ('KHO', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen tao phieu xuat kho.')
+            messages.error(request, 'Bạn không có quyền tạo phiếu xuất kho.')
             return redirect('warehouse:export_list')
 
         receipt, error = ExportReceiptService().create_receipt(
@@ -307,7 +307,7 @@ class ExportReceiptListView(LoginRequiredMixin, View):
             request.user,
         )
         if receipt:
-            messages.success(request, f'Da tao phieu xuat {receipt.receipt_code} thanh cong. Dang cho duyet.')
+            messages.success(request, f'Đã tạo phiếu xuất {receipt.receipt_code} thành công. Đang chờ duyệt.')
         else:
             messages.error(request, error)
         return redirect('warehouse:export_list')
@@ -321,17 +321,17 @@ class ExportReceiptExcelTemplateView(LoginRequiredMixin, View):
 class ExportReceiptExcelUploadView(LoginRequiredMixin, View):
     def post(self, request):
         if request.user.role not in ('KHO', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen import phieu xuat kho.')
+            messages.error(request, 'Bạn không có quyền import phiếu xuất kho.')
             return redirect('warehouse:export_list')
 
         uploaded_file = request.FILES.get('excel_file')
         if not uploaded_file:
-            messages.error(request, 'Vui long chon file Excel.')
+            messages.error(request, 'Vui lòng chọn file Excel.')
             return redirect('warehouse:export_list')
 
         try:
             receipts = ExportReceiptService().import_receipts_from_excel(uploaded_file, request.user)
-            messages.success(request, f'Da import {len(receipts)} phieu xuat tu Excel.')
+            messages.success(request, f'Đã import {len(receipts)} phiếu xuất từ Excel.')
         except ValueError as exc:
             messages.error(request, str(exc))
         return redirect('warehouse:export_list')
@@ -357,7 +357,7 @@ class ExportReceiptDetailView(LoginRequiredMixin, View):
     def get(self, request, pk):
         receipt = ExportReceiptService().get_by_id(pk)
         if not receipt:
-            messages.error(request, 'Khong tim thay phieu xuat kho.')
+            messages.error(request, 'Không tìm thấy phiếu xuất kho.')
             return redirect('warehouse:export_list')
 
         return render(
@@ -374,7 +374,7 @@ class ExportReceiptDetailView(LoginRequiredMixin, View):
 class ExportReceiptApproveView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen duyet phieu.')
+            messages.error(request, 'Bạn không có quyền duyệt phiếu.')
             return redirect('warehouse:export_list')
         success, message = ExportReceiptService().approve_receipt(pk, request.user)
         messages.success(request, message) if success else messages.error(request, message)
@@ -384,7 +384,7 @@ class ExportReceiptApproveView(LoginRequiredMixin, View):
 class ExportReceiptRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen tu choi phieu.')
+            messages.error(request, 'Bạn không có quyền từ chối phiếu.')
             return redirect('warehouse:export_list')
         success, message = ExportReceiptService().reject_receipt(
             pk,
@@ -398,7 +398,7 @@ class ExportReceiptRejectView(LoginRequiredMixin, View):
 class ExportReceiptResubmitView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if request.user.role not in ('KHO', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen gui lai phieu.')
+            messages.error(request, 'Bạn không có quyền gửi lại phiếu.')
             return redirect('warehouse:export_list')
 
         receipt, error = ExportReceiptService().resubmit_receipt(
@@ -408,7 +408,7 @@ class ExportReceiptResubmitView(LoginRequiredMixin, View):
             request.user,
         )
         if receipt:
-            messages.success(request, f'Da gui lai phieu {receipt.receipt_code}. Dang cho duyet.')
+            messages.success(request, f'Đã gửi lại phiếu {receipt.receipt_code}. Đang chờ duyệt.')
         else:
             messages.error(request, error)
         return redirect('warehouse:export_list')

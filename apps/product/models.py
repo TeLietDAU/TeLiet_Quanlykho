@@ -195,29 +195,6 @@ class ProductUnit(models.Model):
 
 
 # # ============================================================
-# # 7. CÔNG NỢ KHÁCH HÀNG
-# # ============================================================
-# class CustomerDebt(models.Model):
-#     STATUS_CHOICES = [
-#         ('Pending', 'Chưa thanh toán'),
-#         ('Paid',    'Đã thanh toán'),
-#     ]
-
-#     id               = models.BigAutoField(primary_key=True)
-#     sales_order      = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='debts')
-#     customer_name    = models.CharField(max_length=100)
-#     remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-#     due_date         = models.DateTimeField(null=True, blank=True)
-#     status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-
-#     class Meta:
-#         db_table = 'customer_debts'
-
-#     def __str__(self):
-#         return f"{self.customer_name} - còn {self.remaining_amount}"
-
-
-# # ============================================================
 # # 8. GIAO DỊCH KHO
 # # ============================================================
 # class WarehouseTransaction(models.Model):

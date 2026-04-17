@@ -25,7 +25,7 @@ class ImportReceiptService:
 
     def create_receipt(self, note, items_data, user):
         if not items_data:
-            return None, 'Phi?u ph?i có ít nh?t 1 s?n ph?m.'
+            return None, 'Phiếu phải có ít nhất 1 sản phẩm.'
 
         cleaned_items, error = self._validate_items(items_data)
         if error:
@@ -47,39 +47,39 @@ class ImportReceiptService:
 
     def approve_receipt(self, receipt_id, reviewed_by):
         if reviewed_by.role not in ('KE_TOAN', 'ADMIN') and not reviewed_by.is_superuser:
-            return False, 'Ban khong co quyen duyet phieu.'
+            return False, 'Bạn không có quyền duyệt phiếu.'
         receipt = ImportReceiptRepository.get_by_id(receipt_id)
         if not receipt:
-            return False, 'Không tìm th?y phi?u.'
+            return False, 'Không tìm thấy phiếu.'
         if receipt.status != 'PENDING':
-            return False, 'Ch? có th? duy?t phi?u dang ch? duy?t.'
+            return False, 'Chỉ có thể duyệt phiếu đang chờ duyệt.'
         ImportReceiptRepository.approve(receipt, reviewed_by)
-        return True, f'Phi?u {receipt.receipt_code} dã du?c duy?t. T?n kho dã du?c c?p nh?t.'
+        return True, f'Phiếu {receipt.receipt_code} đã được duyệt. Tồn kho đã được cập nhật.'
 
     def reject_receipt(self, receipt_id, reviewed_by, rejection_note):
         if reviewed_by.role not in ('KE_TOAN', 'ADMIN') and not reviewed_by.is_superuser:
-            return False, 'Ban khong co quyen tu choi phieu.'
+            return False, 'Bạn không có quyền từ chối phiếu.'
         receipt = ImportReceiptRepository.get_by_id(receipt_id)
         if not receipt:
-            return False, 'Không tìm th?y phi?u.'
+            return False, 'Không tìm thấy phiếu.'
         if receipt.status != 'PENDING':
-            return False, 'Ch? có th? t? ch?i phi?u dang ch? duy?t.'
+            return False, 'Chỉ có thể từ chối phiếu đang chờ duyệt.'
         if not rejection_note or not rejection_note.strip():
-            return False, 'Vui lòng ghi lý do t? ch?i.'
+            return False, 'Vui lòng ghi lý do từ chối.'
         ImportReceiptRepository.reject(receipt, reviewed_by, rejection_note.strip())
-        return True, f'Phi?u {receipt.receipt_code} dã b? t? ch?i.'
+        return True, f'Phiếu {receipt.receipt_code} đã bị từ chối.'
 
     def resubmit_receipt(self, receipt_id, note, items_data, user):
         receipt = ImportReceiptRepository.get_by_id(receipt_id)
         if not receipt:
-            return None, 'Không tìm th?y phi?u.'
+            return None, 'Không tìm thấy phiếu.'
         if receipt.status != 'REJECTED':
-            return None, 'Ch? có th? g?i l?i phi?u b? t? ch?i.'
+            return None, 'Chỉ có thể gửi lại phiếu bị từ chối.'
         if receipt.created_by != user:
-            return None, 'B?n không có quy?n s?a phi?u này.'
+            return None, 'Bạn không có quyền sửa phiếu này.'
 
         if not items_data:
-            return None, 'Phi?u ph?i có ít nh?t 1 s?n ph?m.'
+            return None, 'Phiếu phải có ít nhất 1 sản phẩm.'
 
         cleaned_items, error = self._validate_items(items_data)
         if error:
@@ -92,19 +92,19 @@ class ImportReceiptService:
         cleaned_items = []
         for idx, item in enumerate(items_data):
             if not item.get('product_id'):
-                return None, f'Dòng {idx + 1}: chua ch?n s?n ph?m.'
+                return None, f'Dòng {idx + 1}: chưa chọn sản phẩm.'
             try:
                 qty = Decimal(str(item.get('quantity', 0)))
             except Exception:
-                return None, f'Dòng {idx + 1}: s? lu?ng không h?p l?.'
+                return None, f'Dòng {idx + 1}: số lượng không hợp lệ.'
             try:
                 unit_price = Decimal(str(item.get('unit_price', 0)))
             except Exception:
-                return None, f'Dòng {idx + 1}: don giá không h?p l?.'
+                return None, f'Dòng {idx + 1}: đơn giá không hợp lệ.'
             if qty <= 0:
-                return None, f'Dòng {idx + 1}: s? lu?ng ph?i l?n hon 0.'
+                return None, f'Dòng {idx + 1}: số lượng phải lớn hơn 0.'
             if unit_price < 0:
-                return None, f'Dòng {idx + 1}: don giá ph?i l?n hon ho?c b?ng 0.'
+                return None, f'Dòng {idx + 1}: đơn giá phải lớn hơn hoặc bằng 0.'
             cleaned_items.append({
                 'product_id': item['product_id'],
                 'quantity': qty,
@@ -160,7 +160,7 @@ class ExportReceiptService:
 
     def create_receipt(self, note, items_data, user, sales_order=None):
         if not items_data:
-            return None, 'Phi?u ph?i có ít nh?t 1 s?n ph?m.'
+            return None, 'Phiếu phải có ít nhất 1 sản phẩm.'
 
         cleaned_items, error = self._validate_items(items_data)
         if error:
@@ -190,42 +190,42 @@ class ExportReceiptService:
 
     def approve_receipt(self, receipt_id, reviewed_by):
         if reviewed_by.role not in ('KE_TOAN', 'ADMIN') and not reviewed_by.is_superuser:
-            return False, 'Ban khong co quyen duyet phieu.'
+            return False, 'Bạn không có quyền duyệt phiếu.'
         receipt = ExportReceiptRepository.get_by_id(receipt_id)
         if not receipt:
-            return False, 'Không tìm th?y phi?u.'
+            return False, 'Không tìm thấy phiếu.'
         if receipt.status != 'PENDING':
-            return False, 'Ch? có th? duy?t phi?u dang ch? duy?t.'
+            return False, 'Chỉ có thể duyệt phiếu đang chờ duyệt.'
         try:
             ExportReceiptRepository.approve(receipt, reviewed_by)
         except ValueError as exc:
             return False, str(exc)
-        return True, f'Phi?u {receipt.receipt_code} dã du?c duy?t. T?n kho dã du?c c?p nh?t.'
+        return True, f'Phiếu {receipt.receipt_code} đã được duyệt. Tồn kho đã được cập nhật.'
 
     def reject_receipt(self, receipt_id, reviewed_by, rejection_note):
         if reviewed_by.role not in ('KE_TOAN', 'ADMIN') and not reviewed_by.is_superuser:
-            return False, 'Ban khong co quyen tu choi phieu.'
+            return False, 'Bạn không có quyền từ chối phiếu.'
         receipt = ExportReceiptRepository.get_by_id(receipt_id)
         if not receipt:
-            return False, 'Không tìm th?y phi?u.'
+            return False, 'Không tìm thấy phiếu.'
         if receipt.status != 'PENDING':
-            return False, 'Ch? có th? t? ch?i phi?u dang ch? duy?t.'
+            return False, 'Chỉ có thể từ chối phiếu đang chờ duyệt.'
         if not rejection_note or not rejection_note.strip():
-            return False, 'Vui lòng ghi lý do t? ch?i.'
+            return False, 'Vui lòng ghi lý do từ chối.'
         ExportReceiptRepository.reject(receipt, reviewed_by, rejection_note.strip())
-        return True, f'Phi?u {receipt.receipt_code} dã b? t? ch?i.'
+        return True, f'Phiếu {receipt.receipt_code} đã bị từ chối.'
 
     def resubmit_receipt(self, receipt_id, note, items_data, user):
         receipt = ExportReceiptRepository.get_by_id(receipt_id)
         if not receipt:
-            return None, 'Không tìm th?y phi?u.'
+            return None, 'Không tìm thấy phiếu.'
         if receipt.status != 'REJECTED':
-            return None, 'Ch? có th? g?i l?i phi?u b? t? ch?i.'
+            return None, 'Chỉ có thể gửi lại phiếu bị từ chối.'
         if receipt.created_by != user:
-            return None, 'B?n không có quy?n s?a phi?u này.'
+            return None, 'Bạn không có quyền sửa phiếu này.'
 
         if not items_data:
-            return None, 'Phi?u ph?i có ít nh?t 1 s?n ph?m.'
+            return None, 'Phiếu phải có ít nhất 1 sản phẩm.'
 
         cleaned_items, error = self._validate_items(items_data)
         if error:
@@ -238,19 +238,19 @@ class ExportReceiptService:
         cleaned_items = []
         for idx, item in enumerate(items_data):
             if not item.get('product_id'):
-                return None, f'Dòng {idx + 1}: chua ch?n s?n ph?m.'
+                return None, f'Dòng {idx + 1}: chưa chọn sản phẩm.'
             try:
                 qty = Decimal(str(item.get('quantity', 0)))
             except Exception:
-                return None, f'Dòng {idx + 1}: s? lu?ng không h?p l?.'
+                return None, f'Dòng {idx + 1}: số lượng không hợp lệ.'
             try:
                 unit_price = Decimal(str(item.get('unit_price', 0)))
             except Exception:
-                return None, f'Dòng {idx + 1}: don giá không h?p l?.'
+                return None, f'Dòng {idx + 1}: đơn giá không hợp lệ.'
             if qty <= 0:
-                return None, f'Dòng {idx + 1}: s? lu?ng ph?i l?n hon 0.'
+                return None, f'Dòng {idx + 1}: số lượng phải lớn hơn 0.'
             if unit_price < 0:
-                return None, f'Dòng {idx + 1}: don giá ph?i l?n hon ho?c b?ng 0.'
+                return None, f'Dòng {idx + 1}: đơn giá phải lớn hơn hoặc bằng 0.'
             cleaned_items.append({
                 'product_id': item['product_id'],
                 'quantity': qty,

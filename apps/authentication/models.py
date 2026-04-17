@@ -84,7 +84,7 @@ class User(AbstractUser):
                 ('view_product', 'product'),
                 ('view_category', 'product'),      # ← thêm
                 ('view_productunit', 'product'),
-                # Kế toán có thêm quyền về công nợ, hóa đơn...
+                # Kế toán có thêm quyền về hóa đơn...
             ]
         }
 

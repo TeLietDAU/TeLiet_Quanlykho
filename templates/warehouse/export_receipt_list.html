@@ -96,11 +96,7 @@ var(--border);border-radius:6px;display:flex;align-items:center;justify-content:
     <a class="btn btn-ghost" href="{% url 'warehouse:export_excel_template' %}">T&#7841;o m&#7851;u Excel</a>
     <a class="btn btn-ghost" href="{% url 'warehouse:export_excel_export' %}?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query|urlencode }}{% endif %}">Xu&#7845;t Excel</a>
     {% if user_role == 'KHO' or user_role == 'ADMIN' %}
-    <form method="POST" action="{% url 'warehouse:export_excel_upload' %}" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;">
-      {% csrf_token %}
-      <input type="file" name="excel_file" accept=".xlsx,.xlsm" style="max-width:190px;">
-      <button type="submit" class="btn btn-ghost">Import Excel</button>
-    </form>
+    <button type="button" class="btn btn-ghost" onclick="openImportExcelModal()">Import Excel</button>
     <button class="btn btn-primary" onclick="openCreateModal()">T&#7841;o phi&#7871;u xu&#7845;t</button>
     {% endif %}
   </div>
@@ -166,11 +162,11 @@ var(--border);border-radius:6px;display:flex;align-items:center;justify-content:
       {% for r in receipts %}
       <tr>
         <td class="bold">{{ r.receipt_code }}</td>
-        <td>{{ r.created_by.role_slug }}</td>
+        <td>{{ r.created_by.full_name|default:r.created_by.username }}</td>
         <td>{{ r.total_items }} sản phẩm</td>
         <td>{{ r.created_at|date:"d/m/Y H:i" }}</td>
         <td><span class="status-badge {{ r.status }}">{{ r.get_status_display }}</span></td>
-        <td>{% if r.reviewed_by %}{{ r.reviewed_by.role_slug }}{% else %}—{% endif %}
+        <td>{% if r.reviewed_by %}{{ r.reviewed_by.full_name|default:r.reviewed_by.username }}{% else %}—{% endif %}
         </td>
         <td style="text-align:right">
           <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -279,6 +275,26 @@ var(--border);border-radius:6px;display:flex;align-items:center;justify-content:
   {% if messages %}{% for message in messages %}
   <div class="toast show {{ message.tags }}"><span>{{ message }}</span></div>
   {% endfor %}{% endif %}
+</div>
+
+<!-- Modal: Import Excel -->
+<div class="modal-backdrop" id="modal-import-excel">
+  <form class="modal modal-sm" method="POST" action="{% url 'warehouse:export_excel_upload' %}" enctype="multipart/form-data" id="export-excel-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Import phiếu xuất từ Excel</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-import-excel')">✕</button>
+    </div>
+    <div class="field">
+      <label class="field-label">Chọn file Excel</label>
+      <input type="file" name="excel_file" accept=".xlsx,.xlsm" required>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Hỗ trợ file .xlsx hoặc .xlsm theo đúng mẫu import.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-import-excel')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Import Excel</button>
+    </div>
+  </form>
 </div>
 
 <!-- Modal: Tạo phiếu xuất -->
@@ -391,11 +407,11 @@ var(--border);border-radius:6px;display:flex;align-items:center;justify-content:
       code: '{{ r.receipt_code }}',
         status: '{{ r.status }}',
           statusLabel: '{{ r.get_status_display }}',
-            createdBy: '{% if r.created_by %}{{ r.created_by.role_slug }}{% endif %}',
+            createdBy: '{% if r.created_by %}{{ r.created_by.full_name|default:r.created_by.username|escapejs }}{% endif %}',
               createdAt: '{{ r.created_at|date:"d/m/Y H:i" }}',
                 note: '{{ r.note|default:""|escapejs }}',
                   rejectionNote: '{{ r.rejection_note|default:""|escapejs }}',
-                    reviewedBy: '{% if r.reviewed_by %}{{ r.reviewed_by.role_slug }}{% endif %}',
+                    reviewedBy: '{% if r.reviewed_by %}{{ r.reviewed_by.full_name|default:r.reviewed_by.username|escapejs }}{% endif %}',
                       reviewedAt: '{% if r.reviewed_at %}{{ r.reviewed_at|date:"d/m/Y H:i" }}{% endif %}',
                         items: [
                           {% for item in r.items.all %}
@@ -441,6 +457,11 @@ var(--border);border-radius:6px;display:flex;align-items:center;justify-content:
   function addItemRow() {
     document.getElementById('items-body').insertAdjacentHTML('beforeend', buildItemRow('create', itemCount));
     itemCount++;
+  }
+
+  function openImportExcelModal() {
+    document.getElementById('export-excel-form').reset();
+    document.getElementById('modal-import-excel').classList.add('open');
   }
 
   function openCreateModal() {

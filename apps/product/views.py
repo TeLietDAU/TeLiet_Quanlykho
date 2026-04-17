@@ -103,7 +103,7 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def post(self, request):
         form = ProductForm(request.POST, request.FILES)
         if not form.is_valid():
-            messages.error(request, 'Du lieu khong hop le, vui long kiem tra lai.')
+            messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
             return redirect('product:product_list')
 
         form_data = {
@@ -118,11 +118,11 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, View):
             try:
                 form_data['image_url'] = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
             except ValueError as exc:
-                messages.error(request, f'Loi anh: {exc}')
+                messages.error(request, f'Lỗi ảnh: {exc}')
                 return redirect('product:product_list')
 
         ProductService().create_product(form_data)
-        messages.success(request, 'Tao san pham thanh cong!')
+        messages.success(request, 'Tạo sản phẩm thành công!')
         return redirect('product:product_list')
 
 
@@ -139,7 +139,7 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
         form = ProductForm(request.POST, request.FILES, instance=product)
 
         if not form.is_valid():
-            messages.error(request, 'Loi cap nhat. Vui long kiem tra lai thong tin.')
+            messages.error(request, 'Lỗi cập nhật. Vui lòng kiểm tra lại thông tin.')
             return redirect('product:product_list')
 
         update_data = {
@@ -156,11 +156,11 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 xoa_anh_cu(product.image_url)
                 update_data['image_url'] = xu_ly_va_luu_anh(file_anh, thu_muc_con='san-pham')
             except ValueError as exc:
-                messages.error(request, f'Loi anh: {exc}')
+                messages.error(request, f'Lỗi ảnh: {exc}')
                 return redirect('product:product_list')
 
         service.repository.update(product, update_data)
-        messages.success(request, 'Cap nhat san pham thanh cong!')
+        messages.success(request, 'Cập nhật sản phẩm thành công!')
         return redirect('product:product_list')
 
 
@@ -175,9 +175,9 @@ class ProductDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if product:
             xoa_anh_cu(product.image_url)
             service.repository.delete(product)
-            messages.warning(request, 'Da xoa san pham thanh cong.')
+            messages.warning(request, 'Đã xóa sản phẩm thành công.')
         else:
-            messages.error(request, 'Khong tim thay san pham de xoa.')
+            messages.error(request, 'Không tìm thấy sản phẩm để xóa.')
 
         return redirect('product:product_list')
 

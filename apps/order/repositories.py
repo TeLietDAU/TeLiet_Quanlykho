@@ -1,7 +1,7 @@
 ﻿from django.db import transaction
 from django.db.models import Q
 
-from .models import CustomerDebt, SalesOrder, SalesOrderItem
+from .models import SalesOrder, SalesOrderItem
 
 
 class SalesOrderRepository:
@@ -112,39 +112,3 @@ class SalesOrderRepository:
                     receipt.save(update_fields=['status', 'rejection_note'])
 
         return order
-
-
-class CustomerDebtRepository:
-    @staticmethod
-    def get_all(status=None, search_customer=None):
-        queryset = CustomerDebt.objects.select_related('sales_order').all()
-        if status:
-            queryset = queryset.filter(status=status)
-        if search_customer:
-            queryset = queryset.filter(customer_name__icontains=search_customer)
-        return queryset.order_by('due_date')
-
-    @staticmethod
-    def get_by_id(debt_id):
-        try:
-            return CustomerDebt.objects.select_related('sales_order').get(pk=debt_id)
-        except CustomerDebt.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_by_sales_order(order_id):
-        return CustomerDebt.objects.filter(sales_order_id=order_id).order_by('due_date')
-
-    @staticmethod
-    def get_pending_debts():
-        return CustomerDebt.objects.select_related('sales_order').filter(status='PENDING').order_by('due_date')
-
-    @staticmethod
-    def create(data):
-        return CustomerDebt.objects.create(**data)
-
-    @staticmethod
-    def update_status(debt, status):
-        debt.status = status
-        debt.save(update_fields=['status'])
-        return debt
