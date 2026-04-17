@@ -207,8 +207,35 @@
     input[type="text"], input[type="email"], input[type="password"], input[type="number"],
     input[type="url"], input[type="date"], input[type="time"], input[type="search"],
     textarea, select { background: var(--surface2) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text) !important; font-family: Google Sans Flex, sans-serif !important; font-size: 13px !important; padding: 10px 14px !important; outline: none !important; transition: border-color 0.15s !important; }
+    select:not([multiple]) { min-height: 38px !important; line-height: 1.35 !important; color-scheme: dark !important; }
     input:focus, textarea:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(232,164,39,0.08) !important; }
     textarea { min-height: 100px !important; resize: vertical !important; }
+
+    /* ===== RELATED SELECT WIDGET ===== */
+    .related-widget-wrapper {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: min(100%, 920px) !important;
+        max-width: 100% !important;
+    }
+    .related-widget-wrapper select {
+        flex: 1 1 auto !important;
+        min-width: 320px !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+    .related-widget-wrapper .related-widget-wrapper-link { flex: 0 0 auto !important; }
+
+    /* ===== INLINE TABLE SELECT WIDTH ===== */
+    .inline-group .tabular td.field-product,
+    .inline-group .tabular td.field-created_by,
+    .inline-group .tabular td.field-reviewed_by { min-width: 280px !important; }
+    .inline-group .tabular td select {
+        min-width: 240px !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
     .help, p.help { color: var(--muted) !important; font-size: 11px !important; }
     ul.errorlist { list-style: none !important; }
     ul.errorlist li { background: rgba(239,68,68,0.08) !important; border: 1px solid rgba(239,68,68,0.2) !important; border-radius: 6px !important; color: var(--danger) !important; padding: 6px 10px !important; margin-bottom: 4px !important; font-size: 12px !important; }
@@ -250,9 +277,40 @@
     #result_list td a { color: var(--accent) !important; text-decoration: none !important; }
     #result_list td a:hover { color: var(--accent2) !important; }
     #result_list input[type="checkbox"] { accent-color: var(--accent) !important; }
-    .actions { background: var(--surface2) !important; border-bottom: 1px solid var(--border) !important; padding: 12px 20px !important; display: flex !important; align-items: center !important; gap: 10px !important; }
-    .actions select { max-width: 200px !important; padding: 7px 12px !important; font-size: 12px !important; }
-    .actions .button { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 7px !important; padding: 7px 14px !important; font-size: 12px !important; color: var(--muted2) !important; cursor: pointer !important; }
+    .actions { background: var(--surface2) !important; border-bottom: 1px solid var(--border) !important; padding: 12px 20px !important; display: flex !important; align-items: flex-end !important; gap: 10px !important; }
+    .actions label {
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+    .actions select {
+        min-width: 320px !important;
+        max-width: 520px !important;
+        width: min(100%, 520px) !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        box-sizing: border-box !important;
+        padding: 0 12px !important;
+        font-size: 12px !important;
+    }
+    .actions .button {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 7px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        box-sizing: border-box !important;
+        padding: 0 16px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+        color: var(--muted2) !important;
+        cursor: pointer !important;
+    }
     .actions .button:hover { color: var(--text) !important; background: var(--surface3) !important; }
     .action-counter { color: var(--muted) !important; font-size: 12px !important; }
     .paginator { border-top: 1px solid var(--border) !important; padding: 14px 20px !important; color: var(--muted) !important; font-size: 12px !important; background: var(--surface) !important; }
