@@ -1,12 +1,11 @@
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
-from django.core.paginator import Paginator
 from django.db import connections
-from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from django.db.utils import OperationalError
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -94,14 +93,16 @@ def _base_context(request):
 # ==========================================
 # 4. CÁC TRANG TỔNG QUAN (DASHBOARD)
 # ==========================================
-DASHBOARD_PAGE_SIZE = 5
-ALLOWED_ORDER_STATUSES = {'CONFIRMED', 'WAITING', 'DONE', 'CANCELLED'}
-ORDER_STATUS_BADGE = {
-    'CONFIRMED': ('pending', '#3b82f6'),
-    'WAITING': ('processing', '#f59e0b'),
-    'DONE': ('done', '#22c55e'),
-    'CANCELLED': ('cancel', '#ef4444'),
-}
+TIME_RANGE_CHOICES = (
+    ('today', 'Hôm nay'),
+    ('7d', '7 ngày'),
+    ('30d', '30 ngày'),
+    ('month', 'Tháng này'),
+    ('custom', 'Tùy chọn'),
+)
+TIME_RANGE_LABELS = dict(TIME_RANGE_CHOICES)
+DEFAULT_DASHBOARD_RANGE = '7d'
+PROCESSING_STATUSES = ('CONFIRMED', 'WAITING')
 
 
 def _format_decimal_with_dot_grouping(value):
@@ -109,14 +110,6 @@ def _format_decimal_with_dot_grouping(value):
         return f'{int(value):,}'.replace(',', '.')
     except (TypeError, ValueError):
         return '0'
-
-
-def _format_vnd(value):
-    try:
-        amount = Decimal(value or 0)
-    except Exception:
-        amount = Decimal('0')
-    return f"{_format_decimal_with_dot_grouping(amount)}đ"
 
 
 def _format_currency_short(value):
@@ -151,25 +144,31 @@ def _calculate_improvement_for_lower_better(current, previous):
     return ((previous - current) / previous) * 100
 
 
-def _build_pagination_items(current_page, total_pages, window=1):
-    if total_pages <= 0:
-        return []
+def _line_total_expression():
+    return ExpressionWrapper(
+        F('quantity') * F('unit_price'),
+        output_field=DecimalField(max_digits=24, decimal_places=4),
+    )
 
-    pages = {1, total_pages}
-    for page_num in range(current_page - window, current_page + window + 1):
-        if 1 <= page_num <= total_pages:
-            pages.add(page_num)
 
-    sorted_pages = sorted(pages)
-    items = []
-    previous = None
-    for page_num in sorted_pages:
-        if previous is not None and page_num - previous > 1:
-            items.append('ellipsis')
-        items.append(page_num)
-        previous = page_num
+def _get_revenue_for_orders(order_queryset):
+    return (
+        SalesOrderItem.objects.filter(order__in=order_queryset, order__status='DONE')
+        .aggregate(total=Sum(_line_total_expression()))['total']
+        or Decimal('0')
+    )
 
-    return items
+
+def _get_order_totals_map(order_ids):
+    if not order_ids:
+        return {}
+
+    totals = (
+        SalesOrderItem.objects.filter(order_id__in=order_ids)
+        .values('order_id')
+        .annotate(total=Sum(_line_total_expression()))
+    )
+    return {row['order_id']: row['total'] or Decimal('0') for row in totals}
 
 
 def _get_order_queryset_for_user(user):
@@ -180,79 +179,294 @@ def _get_order_queryset_for_user(user):
     return SalesOrder.objects.all()
 
 
-def _get_product_summary(order, max_items=2):
-    product_names = [item.product.name for item in order.items.all() if item.product]
-    if not product_names:
-        return '—'
-    if len(product_names) <= max_items:
-        return ', '.join(product_names)
-    return f"{', '.join(product_names[:max_items])} +{len(product_names) - max_items}"
+def _parse_date_input(raw_value):
+    if not raw_value:
+        return None
+
+    try:
+        return datetime.strptime(raw_value, '%Y-%m-%d').date()
+    except ValueError:
+        return None
 
 
-def _get_monthly_revenue(order_queryset):
-    line_total = ExpressionWrapper(
-        F('quantity') * F('unit_price'),
-        output_field=DecimalField(max_digits=24, decimal_places=4),
+def _resolve_dashboard_time_filter(request):
+    now = timezone.localtime()
+    range_key = request.GET.get('range', DEFAULT_DASHBOARD_RANGE).strip().lower()
+    if range_key not in TIME_RANGE_LABELS:
+        range_key = DEFAULT_DASHBOARD_RANGE
+
+    start_date_value = ''
+    end_date_value = ''
+    tz = timezone.get_current_timezone()
+
+    if range_key == 'today':
+        start_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+    elif range_key == '7d':
+        start_dt = (now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+    elif range_key == '30d':
+        start_dt = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+    elif range_key == 'month':
+        start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+    else:
+        start_date = _parse_date_input(request.GET.get('start_date', '').strip())
+        end_date = _parse_date_input(request.GET.get('end_date', '').strip())
+
+        if not start_date:
+            start_date = now.date() - timedelta(days=6)
+        if not end_date:
+            end_date = now.date()
+        if end_date < start_date:
+            start_date, end_date = end_date, start_date
+
+        start_dt = timezone.make_aware(datetime.combine(start_date, time.min), tz)
+        end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), tz)
+        start_date_value = start_date.isoformat()
+        end_date_value = end_date.isoformat()
+
+    if end_dt <= start_dt:
+        end_dt = start_dt + timedelta(days=1)
+
+    period_delta = end_dt - start_dt
+    previous_start = start_dt - period_delta
+    previous_end = start_dt
+
+    if range_key == 'custom':
+        period_label = f"{start_dt.strftime('%d/%m/%Y')} - {(end_dt - timedelta(microseconds=1)).strftime('%d/%m/%Y')}"
+    else:
+        period_label = TIME_RANGE_LABELS.get(range_key, 'Khoảng thời gian')
+
+    return {
+        'range_key': range_key,
+        'start_dt': start_dt,
+        'end_dt': end_dt,
+        'previous_start': previous_start,
+        'previous_end': previous_end,
+        'period_label': period_label,
+        'compare_label': 'So với kỳ trước cùng độ dài',
+        'start_date': start_date_value,
+        'end_date': end_date_value,
+    }
+
+
+def _collect_period_metrics(order_queryset):
+    total_orders = order_queryset.count()
+    processing_orders = order_queryset.filter(status__in=PROCESSING_STATUSES).count()
+    done_orders = order_queryset.filter(status='DONE').count()
+    revenue = _get_revenue_for_orders(order_queryset)
+    completion_rate = (done_orders * 100 / total_orders) if total_orders else 0.0
+
+    return {
+        'total_orders': total_orders,
+        'revenue': revenue,
+        'processing_orders': processing_orders,
+        'done_orders': done_orders,
+        'completion_rate': completion_rate,
+    }
+
+
+def _build_dashboard_stats(base_queryset, time_filter):
+    current_queryset = base_queryset.filter(
+        created_at__gte=time_filter['start_dt'],
+        created_at__lt=time_filter['end_dt'],
     )
-    return (
-        SalesOrderItem.objects.filter(order__in=order_queryset, order__status='DONE')
-        .aggregate(total=Sum(line_total))['total']
-        or Decimal('0')
+    previous_queryset = base_queryset.filter(
+        created_at__gte=time_filter['previous_start'],
+        created_at__lt=time_filter['previous_end'],
     )
 
+    current_metrics = _collect_period_metrics(current_queryset)
+    previous_metrics = _collect_period_metrics(previous_queryset)
 
-def _build_dashboard_stats(base_queryset):
-    now = timezone.now()
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    previous_month_end = month_start - timedelta(microseconds=1)
-    previous_month_start = previous_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    total_orders_change = _calculate_change(current_metrics['total_orders'], previous_metrics['total_orders'])
+    revenue_change = _calculate_change(float(current_metrics['revenue']), float(previous_metrics['revenue']))
+    processing_change = _calculate_improvement_for_lower_better(
+        current_metrics['processing_orders'],
+        previous_metrics['processing_orders'],
+    )
+    completion_change = _calculate_change(
+        current_metrics['completion_rate'],
+        previous_metrics['completion_rate'],
+    )
 
-    current_month_orders = base_queryset.filter(created_at__gte=month_start)
-    previous_month_orders = base_queryset.filter(created_at__gte=previous_month_start, created_at__lt=month_start)
-
-    current_total_orders = current_month_orders.count()
-    previous_total_orders = previous_month_orders.count()
-
-    current_revenue = _get_monthly_revenue(current_month_orders)
-    previous_revenue = _get_monthly_revenue(previous_month_orders)
-
-    current_processing = current_month_orders.filter(status__in=('CONFIRMED', 'WAITING')).count()
-    previous_processing = previous_month_orders.filter(status__in=('CONFIRMED', 'WAITING')).count()
-
-    current_done = current_month_orders.filter(status='DONE').count()
-    previous_done = previous_month_orders.filter(status='DONE').count()
-    current_completion_rate = (current_done * 100 / current_total_orders) if current_total_orders else 0.0
-    previous_completion_rate = (previous_done * 100 / previous_total_orders) if previous_total_orders else 0.0
-
-    total_orders_change = _calculate_change(current_total_orders, previous_total_orders)
-    revenue_change = _calculate_change(float(current_revenue), float(previous_revenue))
-    processing_change = _calculate_improvement_for_lower_better(current_processing, previous_processing)
-    completion_change = _calculate_change(current_completion_rate, previous_completion_rate)
-
-    return [
+    stats = [
         {
             'label': 'Tổng đơn hàng',
-            'value': _format_decimal_with_dot_grouping(current_total_orders),
+            'value': _format_decimal_with_dot_grouping(current_metrics['total_orders']),
             'change': _format_change(total_orders_change),
             'is_positive': total_orders_change >= 0,
         },
         {
             'label': 'Doanh thu tháng',
-            'value': _format_currency_short(current_revenue),
+            'value': _format_currency_short(current_metrics['revenue']),
             'change': _format_change(revenue_change),
             'is_positive': revenue_change >= 0,
         },
         {
             'label': 'Đang xử lý',
-            'value': _format_decimal_with_dot_grouping(current_processing),
+            'value': _format_decimal_with_dot_grouping(current_metrics['processing_orders']),
             'change': _format_change(processing_change),
             'is_positive': processing_change >= 0,
         },
         {
             'label': 'Tỷ lệ hoàn thành',
-            'value': f'{current_completion_rate:.1f}%',
+            'value': f"{current_metrics['completion_rate']:.1f}%",
             'change': _format_change(completion_change),
             'is_positive': completion_change >= 0,
+        },
+    ]
+    return stats
+
+
+def _build_time_buckets(start_dt, end_dt, range_key):
+    if range_key == 'today':
+        step = timedelta(hours=2)
+    elif range_key == 'custom':
+        total_days = max(1, (end_dt.date() - start_dt.date()).days)
+        step = timedelta(days=7) if total_days > 45 else timedelta(days=1)
+    else:
+        step = timedelta(days=1)
+
+    buckets = []
+    cursor = start_dt
+    while cursor < end_dt:
+        next_cursor = min(cursor + step, end_dt)
+        local_start = timezone.localtime(cursor)
+        if step >= timedelta(days=7):
+            local_end = timezone.localtime(next_cursor - timedelta(microseconds=1))
+            label = f"{local_start.strftime('%d/%m')}-{local_end.strftime('%d/%m')}"
+        elif step >= timedelta(days=1):
+            label = local_start.strftime('%d/%m')
+        else:
+            label = local_start.strftime('%H:%M')
+
+        buckets.append({'start': cursor, 'end': next_cursor, 'label': label})
+        cursor = next_cursor
+
+    return buckets
+
+
+def _build_chart_points(labels, values, formatter):
+    if not labels:
+        return []
+
+    numeric_values = []
+    for value in values:
+        try:
+            numeric_values.append(float(value))
+        except (TypeError, ValueError):
+            numeric_values.append(0.0)
+
+    max_value = max(numeric_values) if numeric_values else 0.0
+    points = []
+    for label, value, numeric in zip(labels, values, numeric_values):
+        if max_value > 0:
+            height = max(10, int(round((numeric / max_value) * 100)))
+        else:
+            height = 10
+
+        points.append(
+            {
+                'label': label,
+                'value': formatter(value),
+                'height': height,
+            }
+        )
+
+    return points
+
+
+def _build_mini_charts(base_queryset, time_filter):
+    buckets = _build_time_buckets(
+        time_filter['start_dt'],
+        time_filter['end_dt'],
+        time_filter['range_key'],
+    )
+    if not buckets:
+        return []
+
+    orders = [0] * len(buckets)
+    processing = [0] * len(buckets)
+    done = [0] * len(buckets)
+    revenue = [Decimal('0')] * len(buckets)
+
+    rows = list(base_queryset.filter(
+        created_at__gte=time_filter['start_dt'],
+        created_at__lt=time_filter['end_dt'],
+    ).values('id', 'created_at', 'status'))
+    done_order_ids = [row['id'] for row in rows if row['status'] == 'DONE']
+    order_totals = _get_order_totals_map(done_order_ids)
+
+    for row in rows:
+        created_at = row['created_at']
+        for index, bucket in enumerate(buckets):
+            if bucket['start'] <= created_at < bucket['end']:
+                orders[index] += 1
+                if row['status'] in PROCESSING_STATUSES:
+                    processing[index] += 1
+                if row['status'] == 'DONE':
+                    done[index] += 1
+                    revenue[index] += order_totals.get(row['id'], Decimal('0'))
+                break
+
+    completion = []
+    for index, total in enumerate(orders):
+        completion.append((done[index] * 100 / total) if total else 0.0)
+
+    labels = [bucket['label'] for bucket in buckets]
+    total_orders = sum(orders)
+    total_revenue = sum(revenue, Decimal('0'))
+    total_processing = sum(processing)
+    total_done = sum(done)
+    overall_completion = (total_done * 100 / total_orders) if total_orders else 0.0
+
+    return [
+        {
+            'title': 'Đơn hàng',
+            'subtitle': 'Tổng đơn trong kỳ',
+            'value': _format_decimal_with_dot_grouping(total_orders),
+            'color': '#3b82f6',
+            'points': _build_chart_points(
+                labels,
+                orders,
+                lambda value: _format_decimal_with_dot_grouping(value),
+            ),
+            'start_label': labels[0],
+            'end_label': labels[-1],
+        },
+        {
+            'title': 'Doanh thu',
+            'subtitle': 'Đơn hoàn thành',
+            'value': _format_currency_short(total_revenue),
+            'color': '#22c55e',
+            'points': _build_chart_points(labels, revenue, _format_currency_short),
+            'start_label': labels[0],
+            'end_label': labels[-1],
+        },
+        {
+            'title': 'Đang xử lý',
+            'subtitle': 'CONFIRMED + WAITING',
+            'value': _format_decimal_with_dot_grouping(total_processing),
+            'color': '#f59e0b',
+            'points': _build_chart_points(
+                labels,
+                processing,
+                lambda value: _format_decimal_with_dot_grouping(value),
+            ),
+            'start_label': labels[0],
+            'end_label': labels[-1],
+        },
+        {
+            'title': 'Hoàn thành',
+            'subtitle': 'Tỷ lệ theo mốc thời gian',
+            'value': f'{overall_completion:.1f}%',
+            'color': '#a855f7',
+            'points': _build_chart_points(labels, completion, lambda value: f'{value:.1f}%'),
+            'start_label': labels[0],
+            'end_label': labels[-1],
         },
     ]
 
@@ -260,63 +474,21 @@ def _build_dashboard_stats(base_queryset):
 @login_required
 def dashboard_view(request):
     base_queryset = _get_order_queryset_for_user(request.user)
-    stats = _build_dashboard_stats(base_queryset)
-
-    search_query = request.GET.get('search', '').strip()
-    status_filter = request.GET.get('status', '').strip().upper()
-    page_number = request.GET.get('page', 1)
-
-    orders_queryset = (
-        base_queryset.select_related('created_by')
-        .prefetch_related('items__product')
-        .order_by('-created_at')
-    )
-
-    if search_query:
-        orders_queryset = orders_queryset.filter(
-            Q(order_code__icontains=search_query)
-            | Q(customer_name__icontains=search_query)
-            | Q(items__product__name__icontains=search_query)
-        ).distinct()
-
-    if status_filter in ALLOWED_ORDER_STATUSES:
-        orders_queryset = orders_queryset.filter(status=status_filter)
-    else:
-        status_filter = ''
-
-    paginator = Paginator(orders_queryset, DASHBOARD_PAGE_SIZE)
-    page_obj = paginator.get_page(page_number)
-
-    orders = []
-    for order in page_obj.object_list:
-        badge_class, dot_color = ORDER_STATUS_BADGE.get(order.status, ('pending', '#3b82f6'))
-        orders.append(
-            {
-                'id': str(order.id),
-                'ma_don': order.order_code,
-                'khach_hang': order.customer_name,
-                'vat_lieu': _get_product_summary(order),
-                'ngay_tao': timezone.localtime(order.created_at).strftime('%d/%m/%Y'),
-                'trang_thai': order.get_status_display(),
-                'trang_thai_class': badge_class,
-                'dot_color': dot_color,
-                'tong_tien': _format_vnd(order.total_amount),
-            }
-        )
-
-    pagination_items = _build_pagination_items(page_obj.number, paginator.num_pages, window=1)
+    time_filter = _resolve_dashboard_time_filter(request)
+    stats = _build_dashboard_stats(base_queryset, time_filter)
+    chart_cards = _build_mini_charts(base_queryset, time_filter)
+    time_filter_options = [
+        {'value': value, 'label': label}
+        for value, label in TIME_RANGE_CHOICES
+    ]
 
     context = {
         **_base_context(request),
         'today': timezone.localtime(),
         'stats': stats,
-        'orders': orders,
-        'total_orders': paginator.count,
-        'search_query': search_query,
-        'status_filter': status_filter,
-        'paginator': paginator,
-        'page_obj': page_obj,
-        'pagination_items': pagination_items,
+        'chart_cards': chart_cards,
+        'time_filter': time_filter,
+        'time_filter_options': time_filter_options,
     }
     return render(request, 'dashboard.html', context)
 
