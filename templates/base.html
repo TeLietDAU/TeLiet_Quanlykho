@@ -180,6 +180,7 @@
             transition: all 0.15s;
             text-decoration: none;
         }
+        .icon-btn:focus-visible { outline: 2px solid rgba(232,164,39,0.4); outline-offset: 2px; }
         .icon-btn:hover { background: var(--surface3); color: var(--text); }
         .notif-dot {
             position: absolute;
@@ -188,6 +189,157 @@
             background: var(--danger);
             border-radius: 50%;
             border: 1px solid var(--surface);
+        }
+        .notif-count {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+            font-weight: 700;
+            border: 1px solid var(--surface);
+        }
+        .notif-wrap { position: relative; }
+        .notif-panel {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: min(520px, calc(100vw - 24px));
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 20px 36px rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+            z-index: 60;
+        }
+        .notif-panel[hidden] { display: none !important; }
+        .notif-head {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .notif-head-title { font-size: 13px; font-weight: 700; color: var(--text); }
+        .notif-head-sub { font-size: 11px; color: var(--muted); }
+        .notif-list {
+            max-height: 360px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--surface);
+        }
+        .notif-list::-webkit-scrollbar { width: 8px; }
+        .notif-list::-webkit-scrollbar-track { background: var(--surface); }
+        .notif-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 999px;
+            border: 1px solid var(--surface);
+        }
+        .notif-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+        .notif-item {
+            display: block;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            color: inherit;
+            transition: background-color 0.15s;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: var(--surface2); }
+        .notif-item.danger { border-left: 3px solid var(--danger); }
+        .notif-item.warning { border-left: 3px solid var(--warning); }
+        .notif-item.info { border-left: 3px solid var(--info); }
+        .notif-item-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .notif-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .notif-item-head .notif-title { margin-bottom: 0; }
+        .notif-message { font-size: 12px; color: var(--muted2); line-height: 1.35; margin-bottom: 6px; }
+        .notif-expand {
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted2);
+            border-radius: 6px;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .notif-expand:hover { color: var(--text); border-color: var(--accent); }
+        .notif-details {
+            margin: 8px 0;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .notif-details[hidden] { display: none !important; }
+        .notif-details-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        .notif-details-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 160px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--surface2);
+        }
+        .notif-details-list::-webkit-scrollbar { width: 7px; }
+        .notif-details-list::-webkit-scrollbar-track { background: var(--surface2); }
+        .notif-details-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 999px;
+            border: 1px solid var(--surface2);
+        }
+        .notif-details-list li {
+            font-size: 12px;
+            color: var(--text);
+            padding: 4px 2px;
+            border-bottom: 1px dashed rgba(156, 163, 175, 0.2);
+            word-break: break-word;
+        }
+        .notif-details-list li:last-child { border-bottom: none; }
+        .notif-details-more {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .notif-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .notif-action:hover { color: var(--accent2); }
+        .notif-empty {
+            padding: 18px 14px;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
         }
         /* ===== CONTENT ===== */
         .content { flex: 1; padding: 28px; overflow-y: auto; }
@@ -354,12 +506,58 @@
                 TeLiet &nbsp;/&nbsp; <span>{% block breadcrumb %}{% endblock %}</span>
             </div>
             <div class="topbar-right">
-                <div class="icon-btn">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    <span class="notif-dot"></span>
-                </div>
-                <div class="icon-btn">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <div class="notif-wrap" id="notifWrap">
+                    <button type="button" class="icon-btn" id="notifToggle" aria-expanded="false" aria-haspopup="true" aria-controls="notifPanel" title="Thông báo">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        {% if notifications_count|default:0 > 0 %}
+                        <span class="notif-count">{% if notifications_count > 99 %}99+{% else %}{{ notifications_count }}{% endif %}</span>
+                        {% endif %}
+                    </button>
+
+                    <div class="notif-panel" id="notifPanel" hidden>
+                        <div class="notif-head">
+                            <div>
+                                <div class="notif-head-title">Thông báo hệ thống</div>
+                                <div class="notif-head-sub">{{ notifications_count|default:0 }} mục cần chú ý</div>
+                            </div>
+                        </div>
+                        <div class="notif-list">
+                            {% for item in notifications %}
+                            <div class="notif-item {{ item.level }}">
+                                <div class="notif-item-head">
+                                    <div class="notif-title">{{ item.title }}</div>
+                                    {% if item.details %}
+                                    <button
+                                        type="button"
+                                        class="notif-expand"
+                                        data-notif-expand="notifDetails{{ forloop.counter }}"
+                                        aria-expanded="false"
+                                    >Xem chi tiết</button>
+                                    {% endif %}
+                                </div>
+                                <div class="notif-message">{{ item.message }}</div>
+
+                                {% if item.details %}
+                                <div class="notif-details" id="notifDetails{{ forloop.counter }}" hidden>
+                                    <div class="notif-details-title">{{ item.details_title }}</div>
+                                    <ul class="notif-details-list">
+                                        {% for detail in item.details %}
+                                        <li>{{ detail }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% if item.hidden_count > 0 %}
+                                    <div class="notif-details-more">Còn {{ item.hidden_count }} mục chưa hiển thị.</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <a href="{{ item.url }}" class="notif-action">{{ item.action }}</a>
+                            </div>
+                            {% empty %}
+                            <div class="notif-empty">Hiện chưa có thông báo mới.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -437,6 +635,68 @@
             clearTokens();
             window.location.href = '/';
         }
+
+        (function initNotificationPopup() {
+            const wrap = document.getElementById('notifWrap');
+            const toggle = document.getElementById('notifToggle');
+            const panel = document.getElementById('notifPanel');
+
+            if (!wrap || !toggle || !panel) {
+                return;
+            }
+
+            function closePanel() {
+                panel.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function openPanel() {
+                panel.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+
+            toggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                if (panel.hidden) {
+                    openPanel();
+                } else {
+                    closePanel();
+                }
+            });
+
+            panel.addEventListener('click', function (event) {
+                const expandButton = event.target.closest('[data-notif-expand]');
+                if (!expandButton) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const targetId = expandButton.getAttribute('data-notif-expand');
+                const details = panel.querySelector('#' + targetId);
+                if (!details) {
+                    return;
+                }
+
+                const willOpen = details.hidden;
+                details.hidden = !willOpen;
+                expandButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                expandButton.textContent = willOpen ? 'Thu gọn' : 'Xem chi tiết';
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!wrap.contains(event.target)) {
+                    closePanel();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePanel();
+                }
+            });
+        })();
     </script>
     
     {% block extra_js %}{% endblock %}

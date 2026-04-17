@@ -5,10 +5,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import connections
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.utils import OperationalError
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 
@@ -16,6 +17,7 @@ from django.utils import timezone
 from apps.authentication.services import UserService
 from apps.order.models import SalesOrder, SalesOrderItem
 from apps.product.models import ProductUnit, Product # Mở comment và đảm bảo path đúng
+from apps.warehouse.models import ExportReceipt, ImportReceipt
 
 # ==========================================
 # 1. HỆ THỐNG & SỨC KHỎE (HEALTH CHECK)
@@ -103,6 +105,8 @@ TIME_RANGE_CHOICES = (
 TIME_RANGE_LABELS = dict(TIME_RANGE_CHOICES)
 DEFAULT_DASHBOARD_RANGE = '7d'
 PROCESSING_STATUSES = ('CONFIRMED', 'WAITING')
+NOTIFICATION_PREVIEW_LIMIT = 3
+NOTIFICATION_DETAIL_LIMIT = 80
 
 
 def _format_decimal_with_dot_grouping(value):
@@ -177,6 +181,111 @@ def _get_order_queryset_for_user(user):
     if user.role == 'SALE':
         return SalesOrder.objects.filter(created_by=user)
     return SalesOrder.objects.all()
+
+
+def _build_preview(values, limit=NOTIFICATION_PREVIEW_LIMIT):
+    if not values:
+        return ''
+    preview_values = values[:limit]
+    preview_text = ', '.join(preview_values)
+    hidden_count = max(0, len(values) - limit)
+    if hidden_count > 0:
+        preview_text = f'{preview_text} +{hidden_count}'
+    return preview_text
+
+
+def _build_details(values, limit=NOTIFICATION_DETAIL_LIMIT):
+    if not values:
+        return [], 0
+
+    details = list(values[:limit])
+    hidden_count = max(0, len(values) - len(details))
+    return details, hidden_count
+
+
+def _get_user_role_code(user):
+    if not user.is_authenticated:
+        return ''
+    return 'ADMIN' if user.is_superuser else (user.role or '')
+
+
+def _build_dashboard_notifications(user):
+    notifications = []
+    role_code = _get_user_role_code(user)
+
+    out_of_stock_qs = Product.objects.filter(
+        Q(stock__isnull=True) | Q(stock__quantity__lte=0)
+    ).order_by('name')
+    out_of_stock_names = list(out_of_stock_qs.values_list('name', flat=True))
+    if out_of_stock_names:
+        out_of_stock_details, out_of_stock_hidden = _build_details(out_of_stock_names)
+        notifications.append(
+            {
+                'level': 'danger',
+                'title': f'Tồn kho hết hàng ({len(out_of_stock_names)})',
+                'message': f"Sản phẩm: {_build_preview(out_of_stock_names)}",
+                'details_title': 'Danh sách sản phẩm hết hàng',
+                'details': out_of_stock_details,
+                'hidden_count': out_of_stock_hidden,
+                'url': reverse('warehouse:stock_list'),
+                'action': 'Xem tồn kho',
+            }
+        )
+
+    if role_code in ('ADMIN', 'KE_TOAN'):
+        pending_imports = ImportReceipt.objects.filter(status='PENDING').order_by('-created_at')
+        pending_import_codes = list(pending_imports.values_list('receipt_code', flat=True))
+        if pending_import_codes:
+            pending_import_details, pending_import_hidden = _build_details(pending_import_codes)
+            notifications.append(
+                {
+                    'level': 'warning',
+                    'title': f'Phiếu nhập kho chờ duyệt ({len(pending_import_codes)})',
+                    'message': f"Mã phiếu: {_build_preview(pending_import_codes)}",
+                    'details_title': 'Danh sách mã phiếu nhập chờ duyệt',
+                    'details': pending_import_details,
+                    'hidden_count': pending_import_hidden,
+                    'url': f"{reverse('warehouse:import_list')}?status=PENDING",
+                    'action': 'Mở danh sách phiếu nhập',
+                }
+            )
+
+        pending_exports = ExportReceipt.objects.filter(status='PENDING').order_by('-created_at')
+        pending_export_codes = list(pending_exports.values_list('receipt_code', flat=True))
+        if pending_export_codes:
+            pending_export_details, pending_export_hidden = _build_details(pending_export_codes)
+            notifications.append(
+                {
+                    'level': 'warning',
+                    'title': f'Phiếu xuất kho chờ duyệt ({len(pending_export_codes)})',
+                    'message': f"Mã phiếu: {_build_preview(pending_export_codes)}",
+                    'details_title': 'Danh sách mã phiếu xuất chờ duyệt',
+                    'details': pending_export_details,
+                    'hidden_count': pending_export_hidden,
+                    'url': f"{reverse('warehouse:export_list')}?status=PENDING",
+                    'action': 'Mở danh sách phiếu xuất',
+                }
+            )
+
+    if role_code in ('ADMIN', 'KE_TOAN', 'KHO'):
+        pending_orders = SalesOrder.objects.filter(status='CONFIRMED').order_by('-created_at')
+        pending_order_codes = list(pending_orders.values_list('order_code', flat=True))
+        if pending_order_codes:
+            pending_order_details, pending_order_hidden = _build_details(pending_order_codes)
+            notifications.append(
+                {
+                    'level': 'info',
+                    'title': f'Đơn hàng cần duyệt ({len(pending_order_codes)})',
+                    'message': f"Mã đơn: {_build_preview(pending_order_codes)}",
+                    'details_title': 'Danh sách mã đơn cần duyệt',
+                    'details': pending_order_details,
+                    'hidden_count': pending_order_hidden,
+                    'url': f"{reverse('order:sales_list')}?status=CONFIRMED",
+                    'action': 'Mở danh sách đơn hàng',
+                }
+            )
+
+    return notifications
 
 
 def _parse_date_input(raw_value):
