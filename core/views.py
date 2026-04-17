@@ -1,16 +1,21 @@
-import json
-import uuid
+from datetime import timedelta
+from decimal import Decimal
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from django.db import connections
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.utils import OperationalError
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 
 # --- IMPORT TẦNG SERVICE ---
 from apps.authentication.services import UserService
+from apps.order.models import SalesOrder, SalesOrderItem
 from apps.product.models import ProductUnit, Product # Mở comment và đảm bảo path đúng
 
 # ==========================================
@@ -89,28 +94,229 @@ def _base_context(request):
 # ==========================================
 # 4. CÁC TRANG TỔNG QUAN (DASHBOARD)
 # ==========================================
-@login_required
-def dashboard_view(request):
-    # Dữ liệu mẫu cho Dashboard
-    stats = [
-        {'label': 'Tổng đơn hàng', 'value': '1,284', 'change': '+12.5%', 'is_positive': True},
-        {'label': 'Doanh thu tháng', 'value': '452M đ', 'change': '+8.2%', 'is_positive': True},
-        {'label': 'Đang xử lý', 'value': '48', 'change': '-2.4%', 'is_positive': False},
-        {'label': 'Tỷ lệ hoàn thành', 'value': '94.2%', 'change': '+1.1%', 'is_positive': True},
+DASHBOARD_PAGE_SIZE = 5
+ALLOWED_ORDER_STATUSES = {'CONFIRMED', 'WAITING', 'DONE', 'CANCELLED'}
+ORDER_STATUS_BADGE = {
+    'CONFIRMED': ('pending', '#3b82f6'),
+    'WAITING': ('processing', '#f59e0b'),
+    'DONE': ('done', '#22c55e'),
+    'CANCELLED': ('cancel', '#ef4444'),
+}
+
+
+def _format_decimal_with_dot_grouping(value):
+    try:
+        return f'{int(value):,}'.replace(',', '.')
+    except (TypeError, ValueError):
+        return '0'
+
+
+def _format_vnd(value):
+    try:
+        amount = Decimal(value or 0)
+    except Exception:
+        amount = Decimal('0')
+    return f"{_format_decimal_with_dot_grouping(amount)}đ"
+
+
+def _format_currency_short(value):
+    try:
+        amount = float(value or 0)
+    except (TypeError, ValueError):
+        amount = 0.0
+
+    abs_amount = abs(amount)
+    if abs_amount >= 1_000_000_000:
+        return f'{amount / 1_000_000_000:.1f}B đ'
+    if abs_amount >= 1_000_000:
+        return f'{amount / 1_000_000:.1f}M đ'
+    if abs_amount >= 1_000:
+        return f'{amount / 1_000:.1f}K đ'
+    return f'{amount:.0f} đ'
+
+
+def _format_change(value):
+    return f'{value:+.1f}%'
+
+
+def _calculate_change(current, previous):
+    if previous == 0:
+        return 100.0 if current > 0 else 0.0
+    return ((current - previous) / previous) * 100
+
+
+def _calculate_improvement_for_lower_better(current, previous):
+    if previous == 0:
+        return -100.0 if current > 0 else 0.0
+    return ((previous - current) / previous) * 100
+
+
+def _build_pagination_items(current_page, total_pages, window=1):
+    if total_pages <= 0:
+        return []
+
+    pages = {1, total_pages}
+    for page_num in range(current_page - window, current_page + window + 1):
+        if 1 <= page_num <= total_pages:
+            pages.add(page_num)
+
+    sorted_pages = sorted(pages)
+    items = []
+    previous = None
+    for page_num in sorted_pages:
+        if previous is not None and page_num - previous > 1:
+            items.append('ellipsis')
+        items.append(page_num)
+        previous = page_num
+
+    return items
+
+
+def _get_order_queryset_for_user(user):
+    if user.is_superuser or user.role in ('ADMIN', 'KE_TOAN', 'KHO'):
+        return SalesOrder.objects.all()
+    if user.role == 'SALE':
+        return SalesOrder.objects.filter(created_by=user)
+    return SalesOrder.objects.all()
+
+
+def _get_product_summary(order, max_items=2):
+    product_names = [item.product.name for item in order.items.all() if item.product]
+    if not product_names:
+        return '—'
+    if len(product_names) <= max_items:
+        return ', '.join(product_names)
+    return f"{', '.join(product_names[:max_items])} +{len(product_names) - max_items}"
+
+
+def _get_monthly_revenue(order_queryset):
+    line_total = ExpressionWrapper(
+        F('quantity') * F('unit_price'),
+        output_field=DecimalField(max_digits=24, decimal_places=4),
+    )
+    return (
+        SalesOrderItem.objects.filter(order__in=order_queryset, order__status='DONE')
+        .aggregate(total=Sum(line_total))['total']
+        or Decimal('0')
+    )
+
+
+def _build_dashboard_stats(base_queryset):
+    now = timezone.now()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    previous_month_end = month_start - timedelta(microseconds=1)
+    previous_month_start = previous_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    current_month_orders = base_queryset.filter(created_at__gte=month_start)
+    previous_month_orders = base_queryset.filter(created_at__gte=previous_month_start, created_at__lt=month_start)
+
+    current_total_orders = current_month_orders.count()
+    previous_total_orders = previous_month_orders.count()
+
+    current_revenue = _get_monthly_revenue(current_month_orders)
+    previous_revenue = _get_monthly_revenue(previous_month_orders)
+
+    current_processing = current_month_orders.filter(status__in=('CONFIRMED', 'WAITING')).count()
+    previous_processing = previous_month_orders.filter(status__in=('CONFIRMED', 'WAITING')).count()
+
+    current_done = current_month_orders.filter(status='DONE').count()
+    previous_done = previous_month_orders.filter(status='DONE').count()
+    current_completion_rate = (current_done * 100 / current_total_orders) if current_total_orders else 0.0
+    previous_completion_rate = (previous_done * 100 / previous_total_orders) if previous_total_orders else 0.0
+
+    total_orders_change = _calculate_change(current_total_orders, previous_total_orders)
+    revenue_change = _calculate_change(float(current_revenue), float(previous_revenue))
+    processing_change = _calculate_improvement_for_lower_better(current_processing, previous_processing)
+    completion_change = _calculate_change(current_completion_rate, previous_completion_rate)
+
+    return [
+        {
+            'label': 'Tổng đơn hàng',
+            'value': _format_decimal_with_dot_grouping(current_total_orders),
+            'change': _format_change(total_orders_change),
+            'is_positive': total_orders_change >= 0,
+        },
+        {
+            'label': 'Doanh thu tháng',
+            'value': _format_currency_short(current_revenue),
+            'change': _format_change(revenue_change),
+            'is_positive': revenue_change >= 0,
+        },
+        {
+            'label': 'Đang xử lý',
+            'value': _format_decimal_with_dot_grouping(current_processing),
+            'change': _format_change(processing_change),
+            'is_positive': processing_change >= 0,
+        },
+        {
+            'label': 'Tỷ lệ hoàn thành',
+            'value': f'{current_completion_rate:.1f}%',
+            'change': _format_change(completion_change),
+            'is_positive': completion_change >= 0,
+        },
     ]
 
-    orders = [
-        {'ma_don': '#ORD-7721', 'khach_hang': 'Nguyễn Văn A', 'vat_lieu': 'Xi măng Hà Tiên', 'ngay_tao': '07/03/2026', 'trang_thai': 'Đang xử lý', 'trang_thai_class': 'processing', 'dot_color': '#f59e0b', 'tong_tien': '1,200,000đ'},
-        {'ma_don': '#ORD-7722', 'khach_hang': 'Trần Thị B', 'vat_lieu': 'Sắt phi 16', 'ngay_tao': '06/03/2026', 'trang_thai': 'Đã giao', 'trang_thai_class': 'done', 'dot_color': '#22c55e', 'tong_tien': '850,000đ'},
-    ]
+
+@login_required
+def dashboard_view(request):
+    base_queryset = _get_order_queryset_for_user(request.user)
+    stats = _build_dashboard_stats(base_queryset)
+
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip().upper()
+    page_number = request.GET.get('page', 1)
+
+    orders_queryset = (
+        base_queryset.select_related('created_by')
+        .prefetch_related('items__product')
+        .order_by('-created_at')
+    )
+
+    if search_query:
+        orders_queryset = orders_queryset.filter(
+            Q(order_code__icontains=search_query)
+            | Q(customer_name__icontains=search_query)
+            | Q(items__product__name__icontains=search_query)
+        ).distinct()
+
+    if status_filter in ALLOWED_ORDER_STATUSES:
+        orders_queryset = orders_queryset.filter(status=status_filter)
+    else:
+        status_filter = ''
+
+    paginator = Paginator(orders_queryset, DASHBOARD_PAGE_SIZE)
+    page_obj = paginator.get_page(page_number)
+
+    orders = []
+    for order in page_obj.object_list:
+        badge_class, dot_color = ORDER_STATUS_BADGE.get(order.status, ('pending', '#3b82f6'))
+        orders.append(
+            {
+                'id': str(order.id),
+                'ma_don': order.order_code,
+                'khach_hang': order.customer_name,
+                'vat_lieu': _get_product_summary(order),
+                'ngay_tao': timezone.localtime(order.created_at).strftime('%d/%m/%Y'),
+                'trang_thai': order.get_status_display(),
+                'trang_thai_class': badge_class,
+                'dot_color': dot_color,
+                'tong_tien': _format_vnd(order.total_amount),
+            }
+        )
+
+    pagination_items = _build_pagination_items(page_obj.number, paginator.num_pages, window=1)
 
     context = {
         **_base_context(request),
+        'today': timezone.localtime(),
         'stats': stats,
         'orders': orders,
-        'total_orders': 1284,
-        'page_range': range(1, 4),
-        'current_page': 1,
+        'total_orders': paginator.count,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'paginator': paginator,
+        'page_obj': page_obj,
+        'pagination_items': pagination_items,
     }
     return render(request, 'dashboard.html', context)
 
