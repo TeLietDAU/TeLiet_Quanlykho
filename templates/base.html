@@ -33,7 +33,9 @@
             font-family: Google Sans Flex, sans-serif;
             color: var(--text);
             min-height: 100vh;
+            height: 100vh;
             display: flex;
+            overflow: hidden;
         }
         /* ===== SIDEBAR ===== */
         .sidebar {
@@ -148,7 +150,14 @@
         .user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-role { font-size: 11px; color: var(--muted); }
         /* ===== MAIN ===== */
-        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
         .topbar {
             height: 56px;
             background: var(--surface);
