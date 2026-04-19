@@ -298,30 +298,37 @@
 
     <!-- QUICK ACTIONS -->
     <div class="quick-grid">
-        <a href="{% url 'warehouse:import_list' %}" class="quick-card">
-            <div class="quick-icon" style="background:rgba(232,164,39,0.12);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8a427" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        {% for action in quick_actions %}
+        <a href="{{ action.url }}" class="quick-card">
+            <div class="quick-icon" style="background:{{ action.icon_bg }};">
+                {% if action.icon == 'import' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                {% elif action.icon == 'export' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><polyline points="12 19 12 5"/><polyline points="5 12 12 5 19 12"/></svg>
+                {% elif action.icon == 'stock' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                {% elif action.icon == 'order' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="11" y2="16"/></svg>
+                {% elif action.icon == 'product' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+                {% elif action.icon == 'list' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                {% elif action.icon == 'account' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                {% else %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ action.icon_color }}" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+                {% endif %}
             </div>
-            <div><div class="quick-title">Nhập kho</div><div class="quick-sub">Tạo phiếu nhập</div></div>
+            <div><div class="quick-title">{{ action.title }}</div><div class="quick-sub">{{ action.subtitle }}</div></div>
         </a>
-        <a href="{% url 'order:sales_list' %}" class="quick-card">
-            <div class="quick-icon" style="background:rgba(59,130,246,0.12);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="11" y2="16"/></svg>
+        {% empty %}
+        <div class="quick-card" style="grid-column: 1 / -1; cursor: default;">
+            <div>
+                <div class="quick-title">Không có thao tác nhanh</div>
+                <div class="quick-sub">Vai trò hiện tại chưa được gán thao tác nhanh.</div>
             </div>
-            <div><div class="quick-title">Tạo đơn bán</div><div class="quick-sub">Đơn hàng mới</div></div>
-        </a>
-        <a href="{% url 'warehouse:stock_list' %}" class="quick-card">
-            <div class="quick-icon" style="background:rgba(34,197,94,0.12);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            </div>
-            <div><div class="quick-title">Xem báo cáo</div><div class="quick-sub">Doanh thu, tồn kho</div></div>
-        </a>
-        <a href="{% url 'accounts' %}" class="quick-card">
-            <div class="quick-icon" style="background:rgba(139,92,246,0.12);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <div><div class="quick-title">Tài khoản</div><div class="quick-sub">Quản lý nhân viên</div></div>
-        </a>
+        </div>
+        {% endfor %}
     </div>
 
     <div class="card">

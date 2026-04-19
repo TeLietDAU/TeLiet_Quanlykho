@@ -288,6 +288,143 @@ def _build_dashboard_notifications(user):
     return notifications
 
 
+def _build_quick_actions(user):
+    role_code = _get_user_role_code(user)
+
+    actions_by_role = {
+        'ADMIN': [
+            {
+                'title': 'Nhập kho',
+                'subtitle': 'Tạo phiếu nhập',
+                'url': reverse('warehouse:import_list'),
+                'icon': 'import',
+                'icon_bg': 'rgba(232,164,39,0.12)',
+                'icon_color': '#e8a427',
+            },
+            {
+                'title': 'Tạo đơn bán',
+                'subtitle': 'Đơn hàng mới',
+                'url': reverse('order:sales_list'),
+                'icon': 'order',
+                'icon_bg': 'rgba(59,130,246,0.12)',
+                'icon_color': '#3b82f6',
+            },
+            {
+                'title': 'Xem báo cáo',
+                'subtitle': 'Doanh thu, tồn kho',
+                'url': reverse('warehouse:stock_list'),
+                'icon': 'report',
+                'icon_bg': 'rgba(34,197,94,0.12)',
+                'icon_color': '#22c55e',
+            },
+            {
+                'title': 'Tài khoản',
+                'subtitle': 'Quản lý nhân viên',
+                'url': reverse('accounts'),
+                'icon': 'account',
+                'icon_bg': 'rgba(139,92,246,0.12)',
+                'icon_color': '#8b5cf6',
+            },
+        ],
+        'KHO': [
+            {
+                'title': 'Xuất kho',
+                'subtitle': 'Lập phiếu xuất',
+                'url': reverse('warehouse:export_list'),
+                'icon': 'export',
+                'icon_bg': 'rgba(239,68,68,0.12)',
+                'icon_color': '#ef4444',
+            },
+            {
+                'title': 'Nhập kho',
+                'subtitle': 'Tạo phiếu nhập',
+                'url': reverse('warehouse:import_list'),
+                'icon': 'import',
+                'icon_bg': 'rgba(232,164,39,0.12)',
+                'icon_color': '#e8a427',
+            },
+            {
+                'title': 'Tồn kho',
+                'subtitle': 'Theo dõi số lượng',
+                'url': reverse('warehouse:stock_list'),
+                'icon': 'stock',
+                'icon_bg': 'rgba(34,197,94,0.12)',
+                'icon_color': '#22c55e',
+            },
+            {
+                'title': 'Đơn hàng',
+                'subtitle': 'Theo dõi đơn chờ xử lý',
+                'url': reverse('order:sales_list'),
+                'icon': 'order',
+                'icon_bg': 'rgba(59,130,246,0.12)',
+                'icon_color': '#3b82f6',
+            },
+        ],
+        'SALE': [
+            {
+                'title': 'Tạo đơn bán',
+                'subtitle': 'Đơn hàng mới',
+                'url': reverse('order:sales_list'),
+                'icon': 'order',
+                'icon_bg': 'rgba(59,130,246,0.12)',
+                'icon_color': '#3b82f6',
+            },
+            {
+                'title': 'Sản phẩm',
+                'subtitle': 'Tra cứu danh mục',
+                'url': reverse('product:product_list'),
+                'icon': 'product',
+                'icon_bg': 'rgba(232,164,39,0.12)',
+                'icon_color': '#e8a427',
+            },
+            {
+                'title': 'Đơn hàng',
+                'subtitle': 'Theo dõi đơn đã tạo',
+                'url': reverse('order:sales_list'),
+                'icon': 'list',
+                'icon_bg': 'rgba(34,197,94,0.12)',
+                'icon_color': '#22c55e',
+            },
+        ],
+        'KE_TOAN': [
+            {
+                'title': 'Duyệt nhập kho',
+                'subtitle': 'Phiếu chờ duyệt',
+                'url': f"{reverse('warehouse:import_list')}?status=PENDING",
+                'icon': 'import',
+                'icon_bg': 'rgba(232,164,39,0.12)',
+                'icon_color': '#e8a427',
+            },
+            {
+                'title': 'Duyệt xuất kho',
+                'subtitle': 'Phiếu chờ duyệt',
+                'url': f"{reverse('warehouse:export_list')}?status=PENDING",
+                'icon': 'export',
+                'icon_bg': 'rgba(239,68,68,0.12)',
+                'icon_color': '#ef4444',
+            },
+            {
+                'title': 'Đơn cần duyệt',
+                'subtitle': 'Xác nhận tiến độ đơn',
+                'url': f"{reverse('order:sales_list')}?status=CONFIRMED",
+                'icon': 'order',
+                'icon_bg': 'rgba(59,130,246,0.12)',
+                'icon_color': '#3b82f6',
+            },
+            {
+                'title': 'Tồn kho',
+                'subtitle': 'Đối soát số lượng',
+                'url': reverse('warehouse:stock_list'),
+                'icon': 'stock',
+                'icon_bg': 'rgba(34,197,94,0.12)',
+                'icon_color': '#22c55e',
+            },
+        ],
+    }
+
+    return actions_by_role.get(role_code, actions_by_role['ADMIN'])
+
+
 def _parse_date_input(raw_value):
     if not raw_value:
         return None
@@ -586,6 +723,7 @@ def dashboard_view(request):
     time_filter = _resolve_dashboard_time_filter(request)
     stats = _build_dashboard_stats(base_queryset, time_filter)
     chart_cards = _build_mini_charts(base_queryset, time_filter)
+    quick_actions = _build_quick_actions(request.user)
     time_filter_options = [
         {'value': value, 'label': label}
         for value, label in TIME_RANGE_CHOICES
@@ -596,6 +734,7 @@ def dashboard_view(request):
         'today': timezone.localtime(),
         'stats': stats,
         'chart_cards': chart_cards,
+        'quick_actions': quick_actions,
         'time_filter': time_filter,
         'time_filter_options': time_filter_options,
     }
