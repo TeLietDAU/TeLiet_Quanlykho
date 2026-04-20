@@ -3,51 +3,34 @@ from django.utils import timezone
 
 from apps.order.models import SalesOrder
 
-from .models import (
-    ExportReceipt,
-    ExportReceiptItem,
-    ImportReceipt,
-    ImportReceiptItem,
-    ProductStock,
-)
+from .models import ExportReceipt, ExportReceiptItem, ImportReceipt, ImportReceiptItem, ProductStock
 from .stock_utils import build_stock_payload
 
 
 class ImportReceiptRepository:
-
     @staticmethod
     def get_all():
-        return ImportReceipt.objects.select_related(
-            'created_by', 'reviewed_by'
-        ).prefetch_related('items__product').all()
+        return ImportReceipt.objects.select_related('created_by', 'reviewed_by').prefetch_related('items__product').all()
 
     @staticmethod
     def get_by_id(receipt_id):
         try:
-            return ImportReceipt.objects.select_related(
-                'created_by', 'reviewed_by'
-            ).prefetch_related('items__product').get(pk=receipt_id)
+            return ImportReceipt.objects.select_related('created_by', 'reviewed_by').prefetch_related('items__product').get(pk=receipt_id)
         except ImportReceipt.DoesNotExist:
             return None
 
     @staticmethod
     def get_by_status(status):
-        return ImportReceipt.objects.select_related(
-            'created_by', 'reviewed_by'
-        ).prefetch_related('items__product').filter(status=status)
+        return ImportReceipt.objects.select_related('created_by', 'reviewed_by').prefetch_related('items__product').filter(status=status)
 
     @staticmethod
     def get_by_user(user):
-        return ImportReceipt.objects.select_related(
-            'created_by', 'reviewed_by'
-        ).prefetch_related('items__product').filter(created_by=user)
+        return ImportReceipt.objects.select_related('created_by', 'reviewed_by').prefetch_related('items__product').filter(created_by=user)
 
     @staticmethod
     def generate_receipt_code():
         date_str = timezone.now().strftime('%Y%m%d')
-        count = ImportReceipt.objects.filter(
-            receipt_code__startswith=f'PN-{date_str}'
-        ).count() + 1
+        count = ImportReceipt.objects.filter(receipt_code__startswith=f'PN-{date_str}').count() + 1
         return f'PN-{date_str}-{count:03d}'
 
     @staticmethod
@@ -56,18 +39,19 @@ class ImportReceiptRepository:
         receipt_data['receipt_code'] = ImportReceiptRepository.generate_receipt_code()
         receipt_data['created_by'] = user
         receipt_data['status'] = 'PENDING'
-
         receipt = ImportReceipt.objects.create(**receipt_data)
-        ImportReceiptItem.objects.bulk_create([
-            ImportReceiptItem(
-                receipt=receipt,
-                product_id=item['product_id'],
-                quantity=item['quantity'],
-                unit_price=item.get('unit_price', 0),
-                note=item.get('note', ''),
-            )
-            for item in items_data
-        ])
+        ImportReceiptItem.objects.bulk_create(
+            [
+                ImportReceiptItem(
+                    receipt=receipt,
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    unit_price=item.get('unit_price', 0),
+                    note=item.get('note', ''),
+                )
+                for item in items_data
+            ]
+        )
         return receipt
 
     @staticmethod
@@ -80,13 +64,9 @@ class ImportReceiptRepository:
         receipt.save()
 
         for item in receipt.items.select_related('product').all():
-            stock, _ = ProductStock.objects.get_or_create(
-                product=item.product,
-                defaults={'quantity': 0}
-            )
+            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
             stock.quantity += item.quantity
             stock.save()
-
         return receipt
 
     @staticmethod
@@ -107,23 +87,23 @@ class ImportReceiptRepository:
         receipt.reviewed_by = None
         receipt.reviewed_at = None
         receipt.save()
-
         receipt.items.all().delete()
-        ImportReceiptItem.objects.bulk_create([
-            ImportReceiptItem(
-                receipt=receipt,
-                product_id=item['product_id'],
-                quantity=item['quantity'],
-                unit_price=item.get('unit_price', 0),
-                note=item.get('note', ''),
-            )
-            for item in items_data
-        ])
+        ImportReceiptItem.objects.bulk_create(
+            [
+                ImportReceiptItem(
+                    receipt=receipt,
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    unit_price=item.get('unit_price', 0),
+                    note=item.get('note', ''),
+                )
+                for item in items_data
+            ]
+        )
         return receipt
 
 
 class ProductStockRepository:
-
     @staticmethod
     def get_stock(product_id):
         try:
@@ -146,18 +126,23 @@ class ProductStockRepository:
 
 
 class ExportReceiptRepository:
-
     @staticmethod
     def get_all():
         return ExportReceipt.objects.select_related(
-            'created_by', 'reviewed_by', 'sales_order'
+            'created_by',
+            'reviewed_by',
+            'picked_by',
+            'sales_order',
         ).prefetch_related('items__product').all()
 
     @staticmethod
     def get_by_id(receipt_id):
         try:
             return ExportReceipt.objects.select_related(
-                'created_by', 'reviewed_by', 'sales_order'
+                'created_by',
+                'reviewed_by',
+                'picked_by',
+                'sales_order',
             ).prefetch_related('items__product').get(pk=receipt_id)
         except ExportReceipt.DoesNotExist:
             return None
@@ -165,21 +150,25 @@ class ExportReceiptRepository:
     @staticmethod
     def get_by_status(status):
         return ExportReceipt.objects.select_related(
-            'created_by', 'reviewed_by', 'sales_order'
+            'created_by',
+            'reviewed_by',
+            'picked_by',
+            'sales_order',
         ).prefetch_related('items__product').filter(status=status)
 
     @staticmethod
     def get_by_user(user):
         return ExportReceipt.objects.select_related(
-            'created_by', 'reviewed_by', 'sales_order'
+            'created_by',
+            'reviewed_by',
+            'picked_by',
+            'sales_order',
         ).prefetch_related('items__product').filter(created_by=user)
 
     @staticmethod
     def generate_receipt_code():
         date_str = timezone.now().strftime('%Y%m%d')
-        count = ExportReceipt.objects.filter(
-            receipt_code__startswith=f'EX-{date_str}'
-        ).count() + 1
+        count = ExportReceipt.objects.filter(receipt_code__startswith=f'EX-{date_str}').count() + 1
         return f'EX-{date_str}-{count:03d}'
 
     @staticmethod
@@ -189,31 +178,31 @@ class ExportReceiptRepository:
         if sales_order:
             has_open_receipt = ExportReceipt.objects.filter(
                 sales_order=sales_order,
-                status__in=['PENDING', 'APPROVED'],
+                status__in=['PREPARING', 'PENDING', 'APPROVED'],
             ).exists()
             if has_open_receipt:
-                raise ValueError(f'Đơn hàng {sales_order.order_code} đã có phiếu xuất đang xử lý hoặc đã duyệt.')
+                raise ValueError(f'Don hang {sales_order.order_code} da co phieu xuat dang xu ly hoac da duyet.')
 
         receipt_data['receipt_code'] = ExportReceiptRepository.generate_receipt_code()
         receipt_data['created_by'] = user
-        receipt_data['status'] = 'PENDING'
-
+        receipt_data['status'] = receipt_data.pop('initial_status', 'PENDING')
         receipt = ExportReceipt.objects.create(**receipt_data)
-        ExportReceiptItem.objects.bulk_create([
-            ExportReceiptItem(
-                receipt=receipt,
-                product_id=item['product_id'],
-                quantity=item['quantity'],
-                unit_price=item.get('unit_price', 0),
-                note=item.get('note', ''),
-            )
-            for item in items_data
-        ])
+        ExportReceiptItem.objects.bulk_create(
+            [
+                ExportReceiptItem(
+                    receipt=receipt,
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    unit_price=item.get('unit_price', 0),
+                    note=item.get('note', ''),
+                )
+                for item in items_data
+            ]
+        )
 
         if sales_order and sales_order.status == 'CONFIRMED':
             sales_order.status = 'WAITING'
             sales_order.save(update_fields=['status'])
-
         return receipt
 
     @staticmethod
@@ -221,6 +210,7 @@ class ExportReceiptRepository:
         if not note:
             return None
         import re
+
         match = re.search(r'(DH-\d{8}-\d+)', note)
         if match:
             return match.group(1)
@@ -237,24 +227,68 @@ class ExportReceiptRepository:
         return SalesOrder.objects.filter(order_code=order_code).first()
 
     @staticmethod
-    def _validate_stock_before_approve(receipt):
+    def _validate_stock_before_deduct(receipt):
         insufficient_items = []
         for item in receipt.items.select_related('product').all():
-            stock, _ = ProductStock.objects.get_or_create(
-                product=item.product,
-                defaults={'quantity': 0},
-            )
+            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
             if stock.quantity < item.quantity:
                 insufficient_items.append(
-                    f'{item.product.name}: tồn {stock.quantity} {item.product.base_unit}, cần xuất {item.quantity} {item.product.base_unit}'
+                    f'{item.product.name}: ton {stock.quantity} {item.product.base_unit}, can xuat {item.quantity} {item.product.base_unit}'
                 )
         if insufficient_items:
-            raise ValueError('Không thể duyệt phiếu xuất vì tồn kho không đủ: ' + '; '.join(insufficient_items))
+            raise ValueError('Khong the xac nhan da lay hang vi ton kho khong du: ' + '; '.join(insufficient_items))
+
+    @staticmethod
+    def deduct_stock_for_receipt(receipt):
+        if receipt.stock_deducted:
+            return receipt
+        ExportReceiptRepository._validate_stock_before_deduct(receipt)
+        for item in receipt.items.select_related('product').all():
+            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
+            stock.quantity -= item.quantity
+            if stock.quantity < 0:
+                stock.quantity = 0
+            stock.save()
+        receipt.stock_deducted = True
+        receipt.save(update_fields=['stock_deducted'])
+        return receipt
+
+    @staticmethod
+    def restore_stock_for_receipt(receipt):
+        if not receipt.stock_deducted:
+            return receipt
+        for item in receipt.items.select_related('product').all():
+            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
+            stock.quantity += item.quantity
+            stock.save()
+        receipt.stock_deducted = False
+        receipt.save(update_fields=['stock_deducted'])
+        return receipt
+
+    @staticmethod
+    @transaction.atomic
+    def mark_as_picked(receipt, picked_by, pickup_photo=None):
+        ExportReceiptRepository.deduct_stock_for_receipt(receipt)
+
+        receipt.status = 'PENDING'
+        receipt.picked_by = picked_by
+        receipt.picked_at = timezone.now()
+        if pickup_photo is not None:
+            receipt.pickup_photo = pickup_photo
+        receipt.rejection_note = ''
+        receipt.save()
+
+        order = ExportReceiptRepository._get_linked_order(receipt)
+        if order and order.status == 'WAITING':
+            order.status = 'PICKED'
+            order.save(update_fields=['status'])
+        return receipt
 
     @staticmethod
     @transaction.atomic
     def approve(receipt, reviewed_by):
-        ExportReceiptRepository._validate_stock_before_approve(receipt)
+        if receipt.status != 'PENDING':
+            raise ValueError('Chi co the duyet phieu dang cho duyet.')
 
         receipt.status = 'APPROVED'
         receipt.reviewed_by = reviewed_by
@@ -262,21 +296,10 @@ class ExportReceiptRepository:
         receipt.rejection_note = ''
         receipt.save()
 
-        for item in receipt.items.select_related('product').all():
-            stock, _ = ProductStock.objects.get_or_create(
-                product=item.product,
-                defaults={'quantity': 0}
-            )
-            stock.quantity -= item.quantity
-            if stock.quantity < 0:
-                stock.quantity = 0
-            stock.save()
-
         order = ExportReceiptRepository._get_linked_order(receipt)
-        if order and order.status in ['WAITING', 'CONFIRMED']:
+        if order and order.status == 'PICKED':
             order.status = 'DONE'
             order.save(update_fields=['status'])
-
         return receipt
 
     @staticmethod
@@ -287,38 +310,47 @@ class ExportReceiptRepository:
         receipt.rejection_note = rejection_note
         receipt.save()
 
-        order = ExportReceiptRepository._get_linked_order(receipt)
-        if order and order.status == 'WAITING':
-            order.status = 'CONFIRMED'
-            order.save(update_fields=['status'])
+        if receipt.stock_deducted:
+            ExportReceiptRepository.restore_stock_for_receipt(receipt)
 
+        order = ExportReceiptRepository._get_linked_order(receipt)
+        if order and order.status in ['WAITING', 'PICKED']:
+            order.status = 'WAITING'
+            order.save(update_fields=['status'])
         return receipt
 
     @staticmethod
     @transaction.atomic
     def resubmit(receipt, items_data, note=''):
-        receipt.status = 'PENDING'
+        if receipt.stock_deducted:
+            ExportReceiptRepository.restore_stock_for_receipt(receipt)
+
+        receipt.status = 'PREPARING' if receipt.sales_order_id else 'PENDING'
         receipt.rejection_note = ''
         receipt.note = note
         receipt.reviewed_by = None
         receipt.reviewed_at = None
+        receipt.picked_by = None
+        receipt.picked_at = None
+        receipt.pickup_photo = None
         receipt.save()
 
         receipt.items.all().delete()
-        ExportReceiptItem.objects.bulk_create([
-            ExportReceiptItem(
-                receipt=receipt,
-                product_id=item['product_id'],
-                quantity=item['quantity'],
-                unit_price=item.get('unit_price', 0),
-                note=item.get('note', ''),
-            )
-            for item in items_data
-        ])
+        ExportReceiptItem.objects.bulk_create(
+            [
+                ExportReceiptItem(
+                    receipt=receipt,
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    unit_price=item.get('unit_price', 0),
+                    note=item.get('note', ''),
+                )
+                for item in items_data
+            ]
+        )
 
         order = ExportReceiptRepository._get_linked_order(receipt)
-        if order and order.status == 'CONFIRMED':
+        if order and order.status in ['CONFIRMED', 'WAITING', 'PICKED']:
             order.status = 'WAITING'
             order.save(update_fields=['status'])
-
         return receipt

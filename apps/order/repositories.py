@@ -1,4 +1,4 @@
-﻿from django.db import transaction
+from django.db import transaction
 from django.db.models import Q
 
 from .models import SalesOrder, SalesOrderItem
@@ -11,9 +11,7 @@ class SalesOrderRepository:
         if status:
             queryset = queryset.filter(status=status)
         if search:
-            queryset = queryset.filter(
-                Q(customer_name__icontains=search) | Q(order_code__icontains=search)
-            )
+            queryset = queryset.filter(Q(customer_name__icontains=search) | Q(order_code__icontains=search))
         return queryset.order_by('-created_at')
 
     @staticmethod
@@ -96,17 +94,13 @@ class SalesOrderRepository:
         order.save(update_fields=['status'])
 
         if status == 'CANCELLED':
-            from apps.warehouse.models import ExportReceipt, ProductStock
+            from apps.warehouse.repositories import ExportReceiptRepository
+            from apps.warehouse.models import ExportReceipt
 
             for receipt in ExportReceipt.objects.filter(sales_order=order).prefetch_related('items__product'):
-                if receipt.status == 'APPROVED':
-                    for item in receipt.items.all():
-                        stock, _ = ProductStock.objects.get_or_create(
-                            product=item.product,
-                            defaults={'quantity': 0},
-                        )
-                        stock.quantity += item.quantity
-                        stock.save()
+                if receipt.stock_deducted:
+                    ExportReceiptRepository.restore_stock_for_receipt(receipt)
+                if receipt.status != 'REJECTED':
                     receipt.status = 'REJECTED'
                     receipt.rejection_note = f'Hoan hang do huy don {order.order_code}'
                     receipt.save(update_fields=['status', 'rejection_note'])

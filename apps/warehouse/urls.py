@@ -18,6 +18,7 @@ urlpatterns = [
     path('export/excel/upload/', views.ExportReceiptExcelUploadView.as_view(), name='export_excel_upload'),
     path('export/excel/export/', views.ExportReceiptExcelExportView.as_view(), name='export_excel_export'),
     path('export/<uuid:pk>/', views.ExportReceiptDetailView.as_view(), name='export_detail'),
+    path('export/<uuid:pk>/mark-picked/', views.ExportReceiptMarkPickedView.as_view(), name='export_mark_picked'),
     path('export/<uuid:pk>/approve/', views.ExportReceiptApproveView.as_view(), name='export_approve'),
     path('export/<uuid:pk>/reject/', views.ExportReceiptRejectView.as_view(), name='export_reject'),
     path('export/<uuid:pk>/resubmit/', views.ExportReceiptResubmitView.as_view(), name='export_resubmit'),

@@ -1,4 +1,4 @@
-﻿import json
+import json
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -63,6 +63,7 @@ def _get_sales_order_stats():
     return {
         'total_orders': SalesOrder.objects.count(),
         'pending_orders': SalesOrder.objects.filter(status='WAITING').count(),
+        'picked_orders': SalesOrder.objects.filter(status='PICKED').count(),
         'total_items': SalesOrderItem.objects.aggregate(total=Sum('quantity'))['total'] or 0,
         'today_transactions': SalesOrder.objects.filter(created_at__date=today).count(),
     }
@@ -86,11 +87,8 @@ class SalesOrderListView(LoginRequiredMixin, View):
 
         if status_filter:
             orders = orders.filter(status=status_filter)
-
         if search_query:
-            orders = orders.filter(
-                Q(customer_name__icontains=search_query) | Q(order_code__icontains=search_query)
-            )
+            orders = orders.filter(Q(customer_name__icontains=search_query) | Q(order_code__icontains=search_query))
 
         paginator = Paginator(orders, PAGE_SIZE)
         page_obj = paginator.get_page(page_number)
@@ -124,14 +122,17 @@ class SalesOrderListView(LoginRequiredMixin, View):
             order_id = request.POST.get('order_id')
             new_status = request.POST.get('status')
 
-            if new_status not in ['CONFIRMED', 'WAITING', 'DONE', 'CANCELLED']:
+            if new_status not in ['CONFIRMED', 'WAITING', 'PICKED', 'DONE', 'CANCELLED']:
                 messages.error(request, 'Trang thai khong hop le.')
                 return redirect('order:sales_list')
 
             success, message = SalesOrderService().update_status(order_id, new_status, updated_by=user)
             if success:
                 if new_status == 'WAITING':
-                    messages.success(request, f'{message} Phieu xuat kho da duoc tao tu dong va dang cho duyet.')
+                    messages.success(
+                        request,
+                        f'{message} Phieu xuat kho da duoc tao va dang cho thu kho lay hang.',
+                    )
                 else:
                     messages.success(request, message)
             else:
@@ -142,16 +143,11 @@ class SalesOrderListView(LoginRequiredMixin, View):
             messages.error(request, 'Ban khong co quyen tao don hang.')
             return redirect('order:sales_list')
 
-        customer_name = request.POST.get('customer_name', '')
-        customer_phone = request.POST.get('customer_phone', '')
-        note = request.POST.get('note', '')
-        items_data = _parse_items_from_post(request.POST)
-
         order, errors = SalesOrderService().create_order(
-            customer_name,
-            customer_phone,
-            note,
-            items_data,
+            request.POST.get('customer_name', ''),
+            request.POST.get('customer_phone', ''),
+            request.POST.get('note', ''),
+            _parse_items_from_post(request.POST),
             user,
         )
 
@@ -163,7 +159,6 @@ class SalesOrderListView(LoginRequiredMixin, View):
         else:
             for error in errors:
                 messages.error(request, error['message'])
-
         return redirect('order:sales_list')
 
 
