@@ -26,6 +26,7 @@ urlpatterns = [
     path('', include('apps.product.urls')),
     path('', include('apps.order.urls')),
     path('', include('apps.warehouse.urls')),
+    path('', include('apps.inventory.web_urls')),
 
     # Authentication API
     path('api/xac-thuc/', include('apps.authentication.urls')),
