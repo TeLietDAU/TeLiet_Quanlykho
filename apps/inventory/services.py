@@ -10,7 +10,8 @@ from django.utils import timezone
 from apps.product.models import Product
 
 from .models import InventoryAudit, InventoryLoss
-from .repositories import InventoryRepository, LossRepository, ReportRepository
+from .repositories import InventoryRepository, LossRepository
+from apps.reports.repositories import ReportRepository
 
 
 class InventoryService:
@@ -302,79 +303,4 @@ class LossService:
         }
 
 
-class ReportService:
-    """Service for discrepancy and report summary payloads."""
 
-    @staticmethod
-    def generate_loss_report(date_from=None, date_to=None):
-        summary = ReportRepository.get_report_summary(date_from=date_from, date_to=date_to)
-        aggregations = list(ReportRepository.aggregate_loss_by_type(date_from=date_from, date_to=date_to))
-
-        total_value = summary['total_loss_value'] or Decimal('0.00')
-        result = []
-        for agg in aggregations:
-            agg_value = agg['total_value'] or Decimal('0.00')
-            if total_value > 0:
-                percentage = round((agg_value / total_value) * 100, 2)
-            else:
-                percentage = Decimal('0.00')
-
-            result.append({
-                **agg,
-                'percentage_of_total_cost': percentage,
-                'type_label': dict(InventoryLoss.LossType.choices).get(agg['loss_type'], 'Khac'),
-            })
-
-        return {
-            'overall_summary': {
-                'total_audits_passed': summary['total_approved_audits'],
-                'total_impact_value': total_value,
-            },
-            'breakdown_by_type': result,
-        }
-
-    @staticmethod
-    def generate_discrepancy_report(product_id=None, category_id=None):
-        rows = ReportRepository.discrepancy_rows(product_id=product_id, category_id=category_id)
-
-        payload_rows = []
-        shortage_count = 0
-        surplus_count = 0
-        ok_count = 0
-
-        for row in rows:
-            discrepancy = row['discrepancy']
-            if discrepancy is None:
-                status = 'NO_AUDIT'
-            elif discrepancy < 0:
-                status = 'SHORTAGE'
-                shortage_count += 1
-            elif discrepancy > 0:
-                status = 'SURPLUS'
-                surplus_count += 1
-            else:
-                status = 'MATCH'
-                ok_count += 1
-
-            payload_rows.append({
-                'product_id': row['product'].id,
-                'product_name': row['product'].name,
-                'system_quantity': row['system_quantity'],
-                'reserved_quantity': row['reserved_quantity'],
-                'available_quantity': row['available_quantity'],
-                'last_audit_date': row['last_audit_date'],
-                'last_actual_qty': row['last_actual_qty'],
-                'discrepancy': discrepancy,
-                'discrepancy_pct': row['discrepancy_pct'],
-                'status': status,
-            })
-
-        return {
-            'generated_at': timezone.localtime(),
-            'items': payload_rows,
-            'summary': {
-                'shortage_count': shortage_count,
-                'surplus_count': surplus_count,
-                'ok_count': ok_count,
-            },
-        }

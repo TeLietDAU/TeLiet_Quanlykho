@@ -13,9 +13,10 @@ from django.views import View
 from apps.product.models import Category, Product
 
 from .models import InventoryAudit, InventoryLoss
-from .reports import AuditReportGenerator, DiscrepancyReportGenerator, LossReportGenerator
-from .repositories import ReportRepository
-from .services import InventoryService, LossService, ReportService
+from apps.reports.generators import AuditReportGenerator, DiscrepancyReportGenerator, LossReportGenerator
+from apps.reports.repositories import ReportRepository
+from apps.reports.services import StockReportService, LossReportService, OrderReportService
+from .services import InventoryService, LossService
 
 PAGE_SIZE = 10
 
@@ -103,8 +104,6 @@ class InventoryAuditListView(LoginRequiredMixin, View):
             'search_query': search_query,
             'date_from': date_from_raw,
             'date_to': date_to_raw,
-            'products': Product.objects.select_related('category').all().order_by('name'),
-            'default_audit_date': timezone.localdate().isoformat(),
             'user_role': user_role,
             'stats': {
                 'total': all_audits.count(),
@@ -114,6 +113,20 @@ class InventoryAuditListView(LoginRequiredMixin, View):
             },
         }
         return render(request, 'inventory/audit_list.html', context)
+
+
+class InventoryAuditCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        if not _is_allowed(request.user, ('KHO', 'ADMIN')):
+            messages.error(request, 'Ban khong co quyen tao phien kiem ke.')
+            return redirect('inventory:audit_list')
+        
+        context = {
+            'products': Product.objects.select_related('category').all().order_by('name'),
+            'default_audit_date': timezone.localdate().isoformat(),
+            'user_role': _role(request.user),
+        }
+        return render(request, 'inventory/audit_create.html', context)
 
     def post(self, request):
         if not _is_allowed(request.user, ('KHO', 'ADMIN')):
@@ -126,11 +139,19 @@ class InventoryAuditListView(LoginRequiredMixin, View):
 
         if audit_date is None:
             messages.error(request, 'Vui long nhap ngay kiem ke hop le.')
-            return redirect('inventory:audit_list')
+            return render(request, 'inventory/audit_create.html', {
+                'products': Product.objects.select_related('category').all().order_by('name'),
+                'default_audit_date': timezone.localdate().isoformat(),
+                'user_role': _role(request.user),
+            })
 
         if not product_ids:
             messages.error(request, 'Vui long chon it nhat 1 san pham de kiem ke.')
-            return redirect('inventory:audit_list')
+            return render(request, 'inventory/audit_create.html', {
+                'products': Product.objects.select_related('category').all().order_by('name'),
+                'default_audit_date': timezone.localdate().isoformat(),
+                'user_role': _role(request.user),
+            })
 
         try:
             audit = InventoryService.create_check(
@@ -141,7 +162,11 @@ class InventoryAuditListView(LoginRequiredMixin, View):
             )
         except DjangoValidationError as exc:
             messages.error(request, str(exc.message))
-            return redirect('inventory:audit_list')
+            return render(request, 'inventory/audit_create.html', {
+                'products': Product.objects.select_related('category').all().order_by('name'),
+                'default_audit_date': timezone.localdate().isoformat(),
+                'user_role': _role(request.user),
+            })
 
         messages.success(request, f'Da tao phien kiem ke {audit.audit_code}.')
         return redirect('inventory:audit_detail', audit_id=audit.id)
@@ -473,7 +498,7 @@ class InventoryDiscrepancyView(LoginRequiredMixin, View):
         product_id = _query_value(request.GET, 'product_id') or None
         category_id = _query_value(request.GET, 'category_id') or None
 
-        report_data = ReportService.generate_discrepancy_report(
+        report_data = LossReportService.generate_discrepancy_report(
             product_id=product_id,
             category_id=category_id,
         )

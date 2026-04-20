@@ -31,7 +31,8 @@ urlpatterns = [
     # Authentication API
     path('api/xac-thuc/', include('apps.authentication.urls')),
     path('api/inventory/', include('apps.inventory.urls')),
-    path('api/reports/', include('apps.inventory.report_urls')),
+    path('api/reports/', include('apps.reports.api_urls')),
+    path('reports/', include('apps.reports.urls')),
 ]
 
 

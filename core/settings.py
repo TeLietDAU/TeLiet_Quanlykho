@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.warehouse.apps.WarehouseConfig',  # Nhập kho, tồn kho
     'apps.product',
     'apps.inventory.apps.InventoryConfig',  # Kiểm kê & Hao hụt
+    'apps.reports',
 ]
 
 # ============================================================

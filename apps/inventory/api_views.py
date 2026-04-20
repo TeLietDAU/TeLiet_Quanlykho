@@ -24,10 +24,8 @@ from .serializers import (
     LossRecordCreateSerializer,
     LossRecordUpdateSerializer,
     LossRejectSerializer,
-    ReportFilterSerializer,
-    DiscrepancyFilterSerializer,
 )
-from .services import InventoryService, LossService, ReportService
+from .services import InventoryService, LossService
 
 
 def _display_user(user):
@@ -388,58 +386,3 @@ class InventoryLossStatsView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-class DiscrepancyReportView(APIView):
-    permission_classes = [IsKhoOrKeToanOrAdmin]
-
-    def get(self, request):
-        serializer = DiscrepancyFilterSerializer(data=request.query_params)
-        if not serializer.is_valid():
-            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        data = ReportService.generate_discrepancy_report(
-            product_id=serializer.validated_data.get('product_id'),
-            category_id=serializer.validated_data.get('category_id'),
-        )
-        return Response(data, status=status.HTTP_200_OK)
-
-
-# Legacy endpoints kept for backward compatibility.
-class CreateInventoryCheckView(APIView):
-    permission_classes = [IsKhoOrAdmin]
-
-    def post(self, request):
-        view = InventoryAuditListCreateView()
-        view.request = request
-        return view.post(request)
-
-
-class CreateLossRecordView(APIView):
-    permission_classes = [IsKhoOrAdmin]
-
-    def post(self, request):
-        view = InventoryLossListCreateView()
-        view.request = request
-        return view.post(request)
-
-
-class LossReportView(APIView):
-    permission_classes = [IsKeToanOrAdmin]
-
-    def get(self, request):
-        serializer = ReportFilterSerializer(data=request.query_params)
-        if not serializer.is_valid():
-            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        validated = serializer.validated_data
-        data = ReportService.generate_loss_report(
-            date_from=validated.get('date_from'),
-            date_to=validated.get('date_to'),
-        )
-        return Response(
-            {
-                'message': 'Da tai bao cao thong ke hao hut.',
-                'generated_at': timezone.localtime(),
-                'data': data,
-            },
-            status=status.HTTP_200_OK,
-        )

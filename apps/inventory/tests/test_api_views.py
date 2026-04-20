@@ -5,7 +5,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.authentication.models import User
-from apps.inventory.models import InventoryAudit, InventoryAuditItem, InventoryLoss, ReportExportLog
+from apps.inventory.models import InventoryAudit, InventoryAuditItem, InventoryLoss
+from apps.reports.models import ReportExportLog
 from apps.product.models import Category, Product
 from apps.warehouse.models import ProductStock
 

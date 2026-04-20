@@ -1,13 +1,13 @@
-"""Export endpoints for inventory reports."""
-
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .permissions import IsKeToanOrAdmin
+from apps.inventory.permissions import IsKeToanOrAdmin, IsKhoOrKeToanOrAdmin
 from .repositories import ReportRepository
-from .serializers import ExportRequestSerializer
-from .reports import (
+from .serializers import ExportRequestSerializer, DiscrepancyFilterSerializer, ReportFilterSerializer
+from .services import LossReportService
+from .generators import (
     StockSummaryReportGenerator,
     ImportHistoryReportGenerator,
     ExportHistoryReportGenerator,
@@ -200,3 +200,40 @@ class AuditReportExportView(APIView):
             row_count=len(rows),
         )
         return response
+
+class DiscrepancyReportView(APIView):
+    permission_classes = [IsKhoOrKeToanOrAdmin]
+
+    def get(self, request):
+        serializer = DiscrepancyFilterSerializer(data=request.query_params)
+        if not serializer.is_valid():
+            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = LossReportService.generate_discrepancy_report(
+            product_id=serializer.validated_data.get('product_id'),
+            category_id=serializer.validated_data.get('category_id'),
+        )
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class LossReportView(APIView):
+    permission_classes = [IsKeToanOrAdmin]
+
+    def get(self, request):
+        serializer = ReportFilterSerializer(data=request.query_params)
+        if not serializer.is_valid():
+            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        validated = serializer.validated_data
+        data = LossReportService.generate_loss_report(
+            date_from=validated.get('date_from'),
+            date_to=validated.get('date_to'),
+        )
+        return Response(
+            {
+                'message': 'Da tai bao cao thong ke hao hut.',
+                'generated_at': timezone.localtime(),
+                'data': data,
+            },
+            status=status.HTTP_200_OK,
+        )

@@ -38,6 +38,11 @@
         <h1 class="page-title">Kiểm kê kho</h1>
         <p class="page-sub">Tạo phiên kiểm kê, cập nhật số thực tế và theo dõi trạng thái duyệt</p>
     </div>
+    {% if user_role == 'KHO' or user_role == 'ADMIN' %}
+    <a href="{% url 'inventory:audit_create' %}" class="btn btn-primary">
+        + Tạo phiên kiểm kê
+    </a>
+    {% endif %}
 </div>
 
 {% if messages %}
@@ -83,35 +88,6 @@
     </form>
 </div>
 
-{% if user_role == 'KHO' or user_role == 'ADMIN' %}
-<div class="card" style="padding:18px;margin-bottom:18px;">
-    <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text);">Tạo phiên kiểm kê mới</div>
-    <form method="post">
-        {% csrf_token %}
-        <div class="filter-wrap">
-            <div class="field">
-                <label class="field-label">Ngày kiểm kê</label>
-                <input type="date" name="audit_date" value="{{ default_audit_date }}" required>
-            </div>
-            <div class="field" style="min-width:300px;flex:1;">
-                <label class="field-label">Ghi chú</label>
-                <input type="text" name="note" placeholder="Mô tả ngắn cho phiên kiểm kê">
-            </div>
-        </div>
-        <div class="field" style="margin-top:10px;">
-            <label class="field-label">Sản phẩm kiểm kê (giữ Ctrl/Cmd để chọn nhiều)</label>
-            <select class="multi-select" name="product_ids" multiple required>
-                {% for product in products %}
-                <option value="{{ product.id }}">{{ product.name }}{% if product.category %} — {{ product.category.name }}{% endif %}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div style="margin-top:14px;display:flex;justify-content:flex-end;">
-            <button type="submit" class="btn btn-primary">Khởi tạo kiểm kê</button>
-        </div>
-    </form>
-</div>
-{% endif %}
 
 <div class="card">
     <table>

@@ -14,10 +14,6 @@ from .api_views import (
     InventoryLossApproveView,
     InventoryLossRejectView,
     InventoryLossStatsView,
-    DiscrepancyReportView,
-    CreateInventoryCheckView,
-    CreateLossRecordView,
-    LossReportView,
 )
 
 app_name = 'inventory_api'
@@ -37,12 +33,4 @@ urlpatterns = [
     path('losses/<uuid:loss_id>/', InventoryLossDetailUpdateView.as_view(), name='loss-detail-update'),
     path('losses/<uuid:loss_id>/approve/', InventoryLossApproveView.as_view(), name='loss-approve'),
     path('losses/<uuid:loss_id>/reject/', InventoryLossRejectView.as_view(), name='loss-reject'),
-
-    # Discrepancy report
-    path('discrepancy/', DiscrepancyReportView.as_view(), name='discrepancy-report'),
-
-    # Legacy compatibility routes
-    path('audits/create/', CreateInventoryCheckView.as_view(), name='legacy-audit-create'),
-    path('losses/create/', CreateLossRecordView.as_view(), name='legacy-loss-create'),
-    path('reports/losses/', LossReportView.as_view(), name='legacy-loss-report'),
 ]

@@ -543,7 +543,7 @@ class StockReportExportExcelViewTestCase(TestCase):
         to_date = today.isoformat()
 
         response = self.client.get(
-            reverse('warehouse:stock_report_export_excel'),
+            reverse('reports:stock_report_export_excel'),
             {'from_date': from_date, 'to_date': to_date}
         )
 
@@ -573,7 +573,7 @@ class StockReportExportExcelViewTestCase(TestCase):
         to_date = today.isoformat()
 
         response = self.client.get(
-            reverse('warehouse:stock_report_export_excel'),
+            reverse('reports:stock_report_export_excel'),
             {
                 'from_date': from_date,
                 'to_date': to_date,
@@ -595,7 +595,7 @@ class StockReportExportExcelViewTestCase(TestCase):
 
         today = timezone.localdate()
         response = self.client.get(
-            reverse('warehouse:stock_report'),
+            reverse('reports:stock_report'),
             {
                 'from_date': (today + timedelta(days=1)).isoformat(),
                 'to_date': today.isoformat(),
@@ -614,7 +614,7 @@ class StockReportExportExcelViewTestCase(TestCase):
         today = timezone.localdate()
 
         response = self.client.get(
-            reverse('warehouse:stock_report_export_excel'),
+            reverse('reports:stock_report_export_excel'),
             {
                 'from_date': (today + timedelta(days=1)).isoformat(),
                 'to_date': today.isoformat(),
@@ -622,7 +622,7 @@ class StockReportExportExcelViewTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('warehouse:stock_report'), response['Location'])
+        self.assertIn(reverse('reports:stock_report'), response['Location'])
 
 
 class StockReportExportPdfViewTestCase(TestCase):
@@ -657,7 +657,7 @@ class StockReportExportPdfViewTestCase(TestCase):
 
         today = timezone.localdate()
         response = self.client.get(
-            reverse('warehouse:stock_report_export_pdf'),
+            reverse('reports:stock_report_export_pdf'),
             {
                 'from_date': (today - timedelta(days=7)).isoformat(),
                 'to_date': today.isoformat(),
@@ -674,7 +674,7 @@ class StockReportExportPdfViewTestCase(TestCase):
         today = timezone.localdate()
 
         response = self.client.get(
-            reverse('warehouse:stock_report_export_pdf'),
+            reverse('reports:stock_report_export_pdf'),
             {
                 'from_date': (today + timedelta(days=1)).isoformat(),
                 'to_date': today.isoformat(),
@@ -682,4 +682,4 @@ class StockReportExportPdfViewTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('warehouse:stock_report'), response['Location'])
+        self.assertIn(reverse('reports:stock_report'), response['Location'])

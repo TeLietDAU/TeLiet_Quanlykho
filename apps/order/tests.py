@@ -536,7 +536,7 @@ class SalesOrderExportExcelViewTestCase(TestCase):
         self.client.login(username='admin_export_order', password='Admin@123')
         today = timezone.localdate()
         response = self.client.get(
-            reverse('order:sales_export_excel'),
+            reverse('reports:sales_export_excel'),
             {
                 'from_date': (today - timedelta(days=7)).isoformat(),
                 'to_date': today.isoformat(),
@@ -565,7 +565,7 @@ class SalesOrderExportExcelViewTestCase(TestCase):
         self.client.login(username='admin_export_order', password='Admin@123')
         today = timezone.localdate()
         response = self.client.get(
-            reverse('order:sales_export_excel'),
+            reverse('reports:sales_export_excel'),
             {
                 'status': 'DONE',
                 'from_date': (today - timedelta(days=7)).isoformat(),
@@ -589,7 +589,7 @@ class SalesOrderExportExcelViewTestCase(TestCase):
         today = timezone.localdate()
 
         response = self.client.get(
-            reverse('order:sales_export_excel'),
+            reverse('reports:sales_export_excel'),
             {
                 'from_date': (today + timedelta(days=1)).isoformat(),
                 'to_date': today.isoformat(),
@@ -644,7 +644,7 @@ class SalesOrderExportPdfViewTestCase(TestCase):
         today = timezone.localdate()
 
         response = self.client.get(
-            reverse('order:sales_export_pdf'),
+            reverse('reports:sales_export_pdf'),
             {
                 'from_date': (today - timedelta(days=7)).isoformat(),
                 'to_date': today.isoformat(),
@@ -661,7 +661,7 @@ class SalesOrderExportPdfViewTestCase(TestCase):
         today = timezone.localdate()
 
         response = self.client.get(
-            reverse('order:sales_export_pdf'),
+            reverse('reports:sales_export_pdf'),
             {
                 'from_date': (today + timedelta(days=1)).isoformat(),
                 'to_date': today.isoformat(),

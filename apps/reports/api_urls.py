@@ -2,16 +2,18 @@
 
 from django.urls import path
 
-from .report_views import (
+from .api_views import (
     StockSummaryExportView,
     ImportHistoryExportView,
     ExportHistoryExportView,
     LossReportExportView,
     DiscrepancyExportView,
     AuditReportExportView,
+    DiscrepancyReportView,
+    LossReportView,
 )
 
-app_name = 'inventory_reports'
+app_name = 'reports_api'
 
 urlpatterns = [
     path('stock-summary/export/', StockSummaryExportView.as_view(), name='stock-summary-export'),
@@ -20,4 +22,6 @@ urlpatterns = [
     path('loss-report/export/', LossReportExportView.as_view(), name='loss-report-export'),
     path('discrepancy/export/', DiscrepancyExportView.as_view(), name='discrepancy-export'),
     path('audit-report/export/', AuditReportExportView.as_view(), name='audit-report-export'),
+    path('discrepancy/data/', DiscrepancyReportView.as_view(), name='discrepancy-data'),
+    path('loss-report/data/', LossReportView.as_view(), name='loss-report-data'),
 ]

@@ -14,7 +14,7 @@
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
 .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
 .stat-value{font-size:24px;font-weight:800;margin-top:8px;color:var(--accent);}
-.status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;}
+.status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;}
 .status-chip.SHORTAGE{background:rgba(239,68,68,.12);color:var(--danger);}
 .status-chip.SURPLUS{background:rgba(34,197,94,.12);color:var(--success);}
 .status-chip.MATCH{background:rgba(59,130,246,.12);color:var(--info);}
@@ -123,7 +123,14 @@
                         {{ row.discrepancy_pct }}%
                     {% endif %}
                 </td>
-                <td><span class="status-chip {{ row.status }}">{{ row.status }}</span></td>
+                <td>
+                    <span class="status-chip {{ row.status }}">
+                        {% if row.status == 'SHORTAGE' %}Thiếu
+                        {% elif row.status == 'SURPLUS' %}Thừa
+                        {% elif row.status == 'MATCH' %}Khớp
+                        {% else %}Chưa kiểm kê{% endif %}
+                    </span>
+                </td>
                 <td>{% if row.last_audit_date %}{{ row.last_audit_date|date:"d/m/Y" }}{% else %}—{% endif %}</td>
             </tr>
             {% empty %}

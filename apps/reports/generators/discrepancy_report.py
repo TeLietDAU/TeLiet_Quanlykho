@@ -1,8 +1,8 @@
 from django.utils import timezone
 
-from ..base import BaseReportGenerator
-from ..excel import ExcelTableMixin
-from ..pdf import PdfTableMixin
+from .base import BaseReportGenerator
+from .excel import ExcelTableMixin
+from .pdf import PdfTableMixin
 
 
 class DiscrepancyReportGenerator(BaseReportGenerator, ExcelTableMixin, PdfTableMixin):
@@ -20,13 +20,13 @@ class DiscrepancyReportGenerator(BaseReportGenerator, ExcelTableMixin, PdfTableM
         for index, row in enumerate(self.data, start=1):
             discrepancy = row['discrepancy']
             if discrepancy is None:
-                status_label = 'No audit'
+                status_label = 'Chua kiem ke'
             elif discrepancy < 0:
-                status_label = 'Shortage'
+                status_label = 'Thieu'
             elif discrepancy > 0:
-                status_label = 'Surplus'
+                status_label = 'Thua'
             else:
-                status_label = 'Match'
+                status_label = 'Khop'
 
             rows.append([
                 index,

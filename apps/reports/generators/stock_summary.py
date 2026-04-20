@@ -1,8 +1,8 @@
 from django.utils import timezone
 
-from ..base import BaseReportGenerator
-from ..excel import ExcelTableMixin
-from ..pdf import PdfTableMixin
+from .base import BaseReportGenerator
+from .excel import ExcelTableMixin
+from .pdf import PdfTableMixin
 
 
 class StockSummaryReportGenerator(BaseReportGenerator, ExcelTableMixin, PdfTableMixin):
