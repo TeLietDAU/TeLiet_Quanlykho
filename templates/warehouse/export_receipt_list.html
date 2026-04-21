@@ -116,7 +116,12 @@
         <td>{% if r.pickup_photo %}<a href="{{ r.pickup_photo.url }}" target="_blank">Xem ảnh</a>{% else %}-{% endif %}</td>
         <td style="text-align:right">
           <div class="action-stack">
-            <a class="action-btn" href="{% url 'warehouse:export_detail' r.id %}">Xem</a>
+            <a class="action-btn" href="{% url 'warehouse:export_detail' r.id %}" title="Xem chi tiết" aria-label="Xem chi tiết phiếu {{ r.receipt_code }}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </a>
             {% if user_role == 'KHO' or user_role == 'ADMIN' %}
               {% if r.status == 'PREPARING' %}
               <button class="action-btn" type="button" onclick="openPickedModal('{{ r.id }}', '{{ r.receipt_code }}')">Tải ảnh & xác nhận</button>

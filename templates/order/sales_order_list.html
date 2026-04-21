@@ -143,7 +143,14 @@
           {% endif %}
         </td>
         {% endif %}
-        <td style="text-align:right"><a href="{% url 'order:sales_detail' order.pk %}" class="action-btn">Xem</a></td>
+        <td style="text-align:right">
+          <a href="{% url 'order:sales_detail' order.pk %}" class="action-btn" title="Xem chi tiết" aria-label="Xem chi tiết đơn {{ order.order_code }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </a>
+        </td>
       </tr>
       {% empty %}
       <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Chưa có đơn hàng nào.</td></tr>
