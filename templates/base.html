@@ -135,6 +135,22 @@
             border-radius: 8px;
             margin-bottom: 8px;
         }
+        .user-trigger {
+            width: 100%;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-align: left;
+            color: inherit;
+            transition: all 0.15s;
+        }
+        .user-trigger:hover {
+            background: var(--surface3);
+            border-color: var(--border);
+        }
+        .user-trigger:focus-visible {
+            outline: 2px solid rgba(232,164,39,0.35);
+            outline-offset: 2px;
+        }
         .user-avatar {
             width: 32px; height: 32px;
             background: var(--accent);
@@ -149,6 +165,200 @@
         .user-info { flex: 1; min-width: 0; }
         .user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-role { font-size: 11px; color: var(--muted); }
+        .user-popup-wrap {
+            position: relative;
+        }
+        .user-popup {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            isolation: isolate;
+        }
+        .user-popup[hidden] { display: none !important; }
+        .user-popup-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 4, 6, 0.74);
+            backdrop-filter: blur(10px);
+        }
+        .user-popup-dialog {
+            position: relative;
+            width: min(430px, 100%);
+            background: #1a1d22;
+            border: 1px solid #2e3440;
+            border-radius: 16px;
+            box-shadow: 0 28px 60px rgba(0, 0, 0, 0.52);
+            overflow: hidden;
+            z-index: 1;
+        }
+        .user-popup-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 20px 12px;
+        }
+        .user-popup-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        .user-popup-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid #323844;
+            background: #232831;
+            color: #9ca3af;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.15s;
+        }
+        .user-popup-close:hover {
+            color: var(--text);
+            border-color: #4b5563;
+        }
+        .user-popup-body {
+            padding: 2px 20px 18px;
+        }
+        .user-popup-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .user-popup-field.full {
+            grid-column: 1 / -1;
+        }
+        .user-popup-label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .user-popup-input {
+            width: 100%;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid #313744;
+            background: #23272d;
+            color: #f8fafc;
+            padding: 0 12px;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 13px;
+            outline: none;
+        }
+        .user-popup-input:focus {
+            border-color: rgba(240, 178, 51, 0.85);
+            box-shadow: 0 0 0 3px rgba(240, 178, 51, 0.12);
+        }
+        .user-popup-textarea {
+            min-height: 64px;
+            resize: none;
+            padding: 10px 12px;
+            line-height: 1.45;
+        }
+        .user-popup-input.is-error {
+            border-color: rgba(239, 68, 68, 0.9);
+        }
+        .user-popup-help {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .user-popup-error {
+            font-size: 11px;
+            color: #f87171;
+            margin-top: 5px;
+            min-height: 14px;
+        }
+        .user-popup-error:empty {
+            display: none;
+        }
+        .user-popup-status {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #2c3340;
+            background: #23272d;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #cbd5e1;
+        }
+        .user-popup-status[hidden] {
+            display: none !important;
+        }
+        .user-popup-status.success {
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+        .user-popup-status.error {
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+        .legacy-profile-view {
+            display: none;
+        }
+        .user-popup-divider {
+            height: 1px;
+            background: #2c3340;
+            margin: 14px 0 0;
+        }
+        .user-popup-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding-top: 14px;
+        }
+        .user-popup-btn {
+            height: 32px;
+            padding: 0 16px;
+            border-radius: 8px;
+            border: 1px solid #323844;
+            background: #232831;
+            color: #cbd5e1;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .user-popup-btn:hover {
+            border-color: #4b5563;
+            color: #f8fafc;
+        }
+        .user-popup-btn.primary {
+            background: #f0b233;
+            border-color: #f0b233;
+            color: #0f1115;
+        }
+        .user-popup-btn.primary:hover {
+            background: #f5bf56;
+            border-color: #f5bf56;
+        }
+        @media (max-width: 640px) {
+            .user-popup {
+                padding: 16px;
+            }
+            .user-popup-dialog {
+                width: 100%;
+            }
+            .user-popup-grid {
+                grid-template-columns: 1fr;
+            }
+            .user-popup-field.full {
+                grid-column: auto;
+            }
+        }
         /* ===== MAIN ===== */
         .main {
             flex: 1;
@@ -493,12 +703,22 @@
         </div>
 
         <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
-                <div class="user-info">
-                    <div class="user-name">{{ user.full_name|default:user.username }}</div>
-                    <div class="user-role">{{ user.get_role_display|default:user.role }}</div>
-                </div>
+            <div class="user-popup-wrap" id="userPopupWrap">
+                <button
+                    type="button"
+                    class="user-card user-trigger"
+                    id="userPopupToggle"
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-controls="userPopupPanel"
+                >
+                    <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user.full_name|default:user.username }}</div>
+                        <div class="user-role">{{ user.get_role_display|default:user.role }}</div>
+                    </div>
+                </button>
+
             </div>
             <a href="{% url 'logout' %}" class="nav-item">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -574,6 +794,107 @@
         <!-- CONTENT -->
         <div class="content">
             {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <div class="user-popup" id="userPopupPanel" hidden>
+        <div class="user-popup-backdrop" data-user-close></div>
+        <div class="user-popup-dialog" role="dialog" aria-modal="true" aria-labelledby="userPopupTitle">
+            <div class="user-popup-head">
+                <div class="user-popup-title" id="userPopupTitle">Chỉnh sửa tài khoản</div>
+                <button type="button" class="user-popup-close" data-user-close aria-label="Đóng popup">×</button>
+            </div>
+            <form class="user-popup-body" id="userPopupForm" action="{% url 'profile_settings' %}" method="post" novalidate>
+                {% csrf_token %}
+                <div class="user-popup-status" id="userPopupStatus" hidden></div>
+                <div class="user-popup-grid">
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileFullName">Họ và tên</label>
+                        <input class="user-popup-input" id="profileFullName" name="full_name" type="text" value="{{ user.full_name|default:user.username }}">
+                        <div class="user-popup-error" data-error-for="full_name"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileUsername">Tên đăng nhập</label>
+                        <input class="user-popup-input" id="profileUsername" type="text" value="{{ user.username }}" readonly>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label" for="profileEmail">Email</label>
+                        <input class="user-popup-input" id="profileEmail" name="email" type="email" value="{{ user.email }}">
+                        <div class="user-popup-error" data-error-for="email"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileRole">Vai trò</label>
+                        <input class="user-popup-input" id="profileRole" type="text" value="{{ user.get_role_display|default:user.role }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profilePhone">Số điện thoại</label>
+                        <input class="user-popup-input" id="profilePhone" name="phone_number" type="text" value="{{ user.phone_number|default:'' }}">
+                        <div class="user-popup-error" data-error-for="phone_number"></div>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label" for="profileAddress">Địa chỉ</label>
+                        <textarea class="user-popup-input user-popup-textarea" id="profileAddress" name="address">{{ user.address|default:"" }}</textarea>
+                        <div class="user-popup-error" data-error-for="address"></div>
+                    </div>
+                </div>
+                <div class="user-popup-divider"></div>
+                <div class="user-popup-grid" style="padding-top: 14px;">
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label" for="profileCurrentPassword">Mật khẩu hiện tại</label>
+                        <input class="user-popup-input" id="profileCurrentPassword" name="current_password" type="password" autocomplete="current-password">
+                        <div class="user-popup-help">Bỏ trống nếu không muốn đổi mật khẩu.</div>
+                        <div class="user-popup-error" data-error-for="current_password"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileNewPassword">Mật khẩu mới</label>
+                        <input class="user-popup-input" id="profileNewPassword" name="new_password" type="password" autocomplete="new-password">
+                        <div class="user-popup-error" data-error-for="new_password"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileNewPasswordConfirm">Xác nhận mật khẩu mới</label>
+                        <input class="user-popup-input" id="profileNewPasswordConfirm" name="new_password_confirm" type="password" autocomplete="new-password">
+                        <div class="user-popup-error" data-error-for="new_password_confirm"></div>
+                    </div>
+                </div>
+                <div class="user-popup-error" data-error-for="__all__"></div>
+                <div class="user-popup-divider"></div>
+                <div class="user-popup-actions">
+                    <button type="button" class="user-popup-btn" data-user-close>Hủy</button>
+                    <button type="submit" class="user-popup-btn primary" id="userPopupSubmit">Cập nhật</button>
+                </div>
+            </form>
+            <div class="user-popup-body legacy-profile-view">
+                <div class="user-popup-grid">
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Họ và tên</label>
+                        <input class="user-popup-input" type="text" value="{{ user.full_name|default:user.username }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Tên đăng nhập</label>
+                        <input class="user-popup-input" type="text" value="{{ user.username }}" readonly>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label">Email</label>
+                        <input class="user-popup-input" type="text" value="{{ user.email|default:'Chưa cập nhật' }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Vai trò</label>
+                        <input class="user-popup-input" type="text" value="{{ user.get_role_display|default:user.role }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Số điện thoại</label>
+                        <input class="user-popup-input" type="text" value="{{ user.phone_number|default:'Chưa cập nhật' }}" readonly>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label">Địa chỉ</label>
+                        <textarea class="user-popup-input user-popup-textarea" readonly>{{ user.address|default:"Chưa cập nhật" }}</textarea>
+                    </div>
+                </div>
+                <div class="user-popup-divider"></div>
+                <div class="user-popup-actions">
+                    <button type="button" class="user-popup-btn primary" data-user-close>Đóng</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -692,6 +1013,153 @@
                 details.hidden = !willOpen;
                 expandButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
                 expandButton.textContent = willOpen ? 'Thu gọn' : 'Xem chi tiết';
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!wrap.contains(event.target)) {
+                    closePanel();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePanel();
+                }
+            });
+        })();
+
+        (function initUserPopup() {
+            const wrap = document.getElementById('userPopupWrap');
+            const toggle = document.getElementById('userPopupToggle');
+            const panel = document.getElementById('userPopupPanel');
+            const closeButtons = panel ? panel.querySelectorAll('[data-user-close]') : [];
+            const form = document.getElementById('userPopupForm');
+            const submitButton = document.getElementById('userPopupSubmit');
+            const statusBox = document.getElementById('userPopupStatus');
+            const fullNameDisplay = document.querySelector('.sidebar-footer .user-name');
+            const roleDisplay = document.querySelector('.sidebar-footer .user-role');
+
+            if (!wrap || !toggle || !panel || !form) {
+                return;
+            }
+
+            function closePanel() {
+                panel.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function openPanel() {
+                panel.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+
+            function clearErrors() {
+                form.querySelectorAll('.user-popup-input').forEach(function (input) {
+                    input.classList.remove('is-error');
+                });
+                form.querySelectorAll('[data-error-for]').forEach(function (node) {
+                    node.textContent = '';
+                });
+            }
+
+            function showStatus(message, type) {
+                if (!statusBox) {
+                    return;
+                }
+                statusBox.hidden = false;
+                statusBox.className = 'user-popup-status ' + type;
+                statusBox.textContent = message;
+            }
+
+            function clearStatus() {
+                if (!statusBox) {
+                    return;
+                }
+                statusBox.hidden = true;
+                statusBox.className = 'user-popup-status';
+                statusBox.textContent = '';
+            }
+
+            function applyErrors(errors) {
+                Object.keys(errors || {}).forEach(function (key) {
+                    const errorNode = form.querySelector('[data-error-for="' + key + '"]');
+                    const inputNode = form.querySelector('[name="' + key + '"]');
+                    if (errorNode) {
+                        errorNode.textContent = errors[key];
+                    }
+                    if (inputNode) {
+                        inputNode.classList.add('is-error');
+                    }
+                });
+            }
+
+            toggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                if (panel.hidden) {
+                    clearStatus();
+                    openPanel();
+                } else {
+                    closePanel();
+                }
+            });
+
+            panel.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+
+            closeButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    closePanel();
+                });
+            });
+
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                clearErrors();
+                clearStatus();
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Đang lưu...';
+                }
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: new FormData(form)
+                    });
+
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.ok) {
+                        applyErrors(payload.errors || {});
+                        showStatus(payload.message || 'Không thể cập nhật thông tin.', 'error');
+                        return;
+                    }
+
+                    if (fullNameDisplay && payload.user && payload.user.full_name) {
+                        fullNameDisplay.textContent = payload.user.full_name;
+                    }
+                    if (roleDisplay && payload.user && payload.user.role_display) {
+                        roleDisplay.textContent = payload.user.role_display;
+                    }
+
+                    form.querySelector('#profileCurrentPassword').value = '';
+                    form.querySelector('#profileNewPassword').value = '';
+                    form.querySelector('#profileNewPasswordConfirm').value = '';
+                    showStatus(payload.message || 'Đã cập nhật thông tin tài khoản.', 'success');
+                } catch (error) {
+                    showStatus('Có lỗi xảy ra khi cập nhật thông tin.', 'error');
+                } finally {
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Cập nhật';
+                    }
+                }
             });
 
             document.addEventListener('click', function (event) {

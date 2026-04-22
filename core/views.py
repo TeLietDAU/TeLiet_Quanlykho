@@ -7,13 +7,16 @@ from django.http import JsonResponse
 from django.db import connections
 from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.utils import OperationalError
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 # --- IMPORT TẦNG SERVICE ---
+from apps.authentication.forms import UserChangeFormCustom
 from apps.authentication.services import UserService
 from apps.order.models import SalesOrder, SalesOrderItem
 from apps.product.models import ProductUnit, Product # Mở comment và đảm bảo path đúng
@@ -778,3 +781,63 @@ def units_view(request):
 @login_required
 def accounts_view(request):
     return render(request, 'accounts.html', _base_context(request))
+
+
+@login_required
+@require_POST
+def profile_settings_view(request):
+    user = request.user
+    profile_form = UserChangeFormCustom(request.POST, instance=user)
+    errors = {}
+
+    if not profile_form.is_valid():
+        for field, field_errors in profile_form.errors.items():
+            key = '__all__' if field == '__all__' else field
+            errors[key] = ' '.join(field_errors)
+
+    current_password = (request.POST.get('current_password') or '').strip()
+    new_password = request.POST.get('new_password') or ''
+    new_password_confirm = request.POST.get('new_password_confirm') or ''
+    wants_password_change = any([current_password, new_password, new_password_confirm])
+
+    if wants_password_change:
+        if not current_password:
+            errors['current_password'] = 'Vui lòng nhập mật khẩu hiện tại.'
+        elif not user.check_password(current_password):
+            errors['current_password'] = 'Mật khẩu hiện tại không chính xác.'
+
+        if not new_password:
+            errors['new_password'] = 'Vui lòng nhập mật khẩu mới.'
+        else:
+            try:
+                validate_password(new_password, user=user)
+            except ValidationError as exc:
+                errors['new_password'] = ' '.join(exc.messages)
+
+        if not new_password_confirm:
+            errors['new_password_confirm'] = 'Vui lòng xác nhận mật khẩu mới.'
+        elif new_password != new_password_confirm:
+            errors['new_password_confirm'] = 'Mật khẩu xác nhận không khớp.'
+
+    if errors:
+        return JsonResponse({'ok': False, 'errors': errors}, status=400)
+
+    profile_form.save()
+
+    if wants_password_change:
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        update_session_auth_hash(request, user)
+
+    return JsonResponse({
+        'ok': True,
+        'message': 'Đã cập nhật thông tin tài khoản.',
+        'user': {
+            'full_name': user.full_name or user.username,
+            'username': user.username,
+            'email': user.email or '',
+            'phone_number': user.phone_number or '',
+            'address': user.address or '',
+            'role_display': user.get_role_display() or user.role,
+        }
+    })
