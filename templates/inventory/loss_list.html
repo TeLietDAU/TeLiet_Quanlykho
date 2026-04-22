@@ -23,9 +23,9 @@
 .message-item.error,.message-item.danger{border-color:rgba(239,68,68,.35);color:#ffb4b4;}
 .message-item.success{border-color:rgba(34,197,94,.35);color:#9de7b4;}
 .message-item.warning{border-color:rgba(245,158,11,.35);color:#ffd37e;}
-.inline-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-.inline-actions form{display:flex;gap:6px;align-items:center;}
-.inline-actions input,.inline-actions select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;}
+.inline-actions{display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
+.inline-actions form{display:flex;flex-direction:column;gap:6px;align-items:flex-end;width:100%;}
+.inline-actions input,.inline-actions select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-size:12px;width:100%;}
 .pagination-wrap{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .pagination{display:flex;gap:4px;}
 .pg-btn{min-width:30px;height:30px;padding:0 8px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted2);text-decoration:none;font-size:12px;}
@@ -154,30 +154,35 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="update">
                             <input type="hidden" name="loss_id" value="{{ loss.id }}">
-                            <select name="loss_type" style="padding:4px 6px;">
+                            <select name="loss_type">
                                 {% for value, label in loss_types %}
                                 <option value="{{ value }}" {% if loss.loss_type == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
-                            <input type="text" name="loss_reason" value="{{ loss.loss_reason }}" minlength="5" required style="width:120px;">
-                            <button class="btn btn-ghost" style="padding:5px 9px;font-size:12px;" type="submit">Sửa</button>
+                            <input type="text" name="loss_reason" value="{{ loss.loss_reason }}" minlength="5" required placeholder="Lý do chi tiết">
+                            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;" type="submit">Cập nhật lý do</button>
                         </form>
                         {% endif %}
 
                         {% if loss.status == 'PENDING' and user_role == 'KE_TOAN' or loss.status == 'PENDING' and user_role == 'ADMIN' %}
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="approve">
-                            <input type="hidden" name="loss_id" value="{{ loss.id }}">
-                            <button class="btn btn-primary" style="padding:5px 9px;font-size:12px;background:var(--success);border-color:var(--success);" type="submit">Duyệt</button>
-                        </form>
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="reject">
-                            <input type="hidden" name="loss_id" value="{{ loss.id }}">
-                            <input type="text" name="rejection_note" placeholder="Lý do từ chối" minlength="3" required style="width:100px;">
-                            <button class="btn btn-danger" style="padding:5px 9px;font-size:12px;" type="submit">Từ chối</button>
-                        </form>
+                        <div style="display:flex; flex-direction:column; gap:12px; align-items:flex-end;">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="approve">
+                                <input type="hidden" name="loss_id" value="{{ loss.id }}">
+                                <button class="btn btn-primary" style="padding:6px 16px; font-size:12px; background:var(--success); border-color:var(--success);" type="submit">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Duyệt phiếu
+                                </button>
+                            </form>
+                            <form method="post" style="border-top: 1px solid var(--border); padding-top: 10px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <input type="hidden" name="loss_id" value="{{ loss.id }}">
+                                <input type="text" name="rejection_note" placeholder="Lý do từ chối..." minlength="3" required style="margin-bottom:6px;">
+                                <button class="btn btn-danger" style="padding:6px 16px; font-size:12px;" type="submit">Từ chối</button>
+                            </form>
+                        </div>
                         {% endif %}
                     </div>
                 </td>

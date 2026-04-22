@@ -262,16 +262,19 @@ class LossRepository:
         loss.rejection_note = ''
         loss.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'rejection_note', 'updated_at'])
 
-        stock, _ = ProductStock.objects.select_for_update().get_or_create(
-            product=loss.product,
-            defaults={'quantity': 0, 'reserved_quantity': 0},
-        )
-        stock.quantity -= loss.loss_quantity
-        if stock.quantity < 0:
-            stock.quantity = 0
-        if stock.reserved_quantity > stock.quantity:
-            stock.reserved_quantity = stock.quantity
-        stock.save(update_fields=['quantity', 'reserved_quantity', 'last_updated'])
+        # Chỉ trừ kho đối với phiếu hao hụt tạo thủ công (không liên kết với phiên kiểm kê).
+        # Phiếu sinh ra từ kiểm kê thì số tồn trên hệ thống đã được cập nhật thành số thực tế lúc duyệt phiên kiểm kê.
+        if loss.audit_item_id is None:
+            stock, _ = ProductStock.objects.select_for_update().get_or_create(
+                product=loss.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0},
+            )
+            stock.quantity -= loss.loss_quantity
+            if stock.quantity < 0:
+                stock.quantity = 0
+            if stock.reserved_quantity > stock.quantity:
+                stock.reserved_quantity = stock.quantity
+            stock.save(update_fields=['quantity', 'reserved_quantity', 'last_updated'])
 
         return loss
 

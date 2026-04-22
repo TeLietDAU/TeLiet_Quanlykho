@@ -205,22 +205,30 @@ class InventoryAuditDetailView(LoginRequiredMixin, View):
         action = _query_value(request.POST, 'action')
         user_role = _role(request.user)
 
-        if action == 'update_item':
+        if action == 'save_all_items':
             if user_role not in ('KHO', 'ADMIN'):
                 return self._deny(request)
-            item_id = _query_value(request.POST, 'item_id')
-            actual_quantity = _query_value(request.POST, 'actual_quantity')
-            note = _query_value(request.POST, 'note')
-            try:
-                InventoryService.update_item_actual(
-                    check_id=audit_id,
-                    item_id=item_id,
-                    actual_quantity=actual_quantity,
-                    note=note,
-                )
-                messages.success(request, 'Da cap nhat so luong thuc te.')
-            except DjangoValidationError as exc:
-                messages.error(request, str(exc.message))
+            
+            item_ids = request.POST.getlist('item_id')
+            has_error = False
+            for item_id in item_ids:
+                actual_quantity = _query_value(request.POST, f'actual_quantity_{item_id}')
+                note = _query_value(request.POST, f'note_{item_id}')
+                
+                if actual_quantity:
+                    try:
+                        InventoryService.update_item_actual(
+                            check_id=audit_id,
+                            item_id=item_id,
+                            actual_quantity=actual_quantity,
+                            note=note,
+                        )
+                    except DjangoValidationError as exc:
+                        messages.error(request, f'Lỗi khi lưu sản phẩm có ID {item_id}: {exc.message}')
+                        has_error = True
+                        
+            if not has_error:
+                messages.success(request, 'Đã lưu tất cả sản phẩm kiểm kê.')
             return redirect('inventory:audit_detail', audit_id=audit_id)
 
         if action == 'submit':
