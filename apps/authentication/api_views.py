@@ -9,7 +9,8 @@ from django.contrib.auth import get_user_model
 from .serializers import (
     CustomTokenObtainPairSerializer,
     UserProfileSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    UserUpdateSerializer
 )
 
 User = get_user_model()
@@ -177,4 +178,19 @@ class CreateSessionFromTokenView(APIView):
                 {"message": f"Lỗi: {str(e)}"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+# ============================================================
+# 6. CẬP NHẬT THÔNG TIN NGƯỜI DÙNG API (PUT/PATCH /api/xac-thuc/update-profile)
+# ============================================================
+class UserUpdateAPIView(generics.UpdateAPIView):
+    """
+    Cập nhật thông tin cá nhân.
+    Yêu cầu: Header mang Bearer Token.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserUpdateSerializer
+
+    def get_object(self):
+        return self.request.user
 

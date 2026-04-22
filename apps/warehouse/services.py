@@ -1,4 +1,10 @@
 from .repositories import ImportReceiptRepository, ProductStockRepository, ExportReceiptRepository
+from decimal import Decimal
+from django.db import transaction
+
+from apps.product.models import Category, Product
+
+from .models import ImportReceiptItem, ExportReceiptItem, ProductStock
 
 
 class ImportReceiptService:
@@ -98,6 +104,9 @@ class StockService:
         return ProductStockRepository.get_stock(product_id)
 
 
+
+
+
 class ExportReceiptService:
     def __init__(self):
         self.repo = ExportReceiptRepository()
@@ -133,9 +142,28 @@ class ExportReceiptService:
                 return None, f'Dòng {idx+1}: số lượng phải lớn hơn 0.'
             item['quantity'] = qty
 
-        receipt_data = {'note': note}
-        receipt = ExportReceiptRepository.create_with_items(receipt_data, items_data, user)
-        return receipt, None
+        requested = {}
+        for item in items_data:
+            requested[item['product_id']] = requested.get(item['product_id'], 0) + item['quantity']
+
+        with transaction.atomic():
+            for product_id, requested_qty in requested.items():
+                stock, _ = ProductStock.objects.select_for_update().get_or_create(
+                    product_id=product_id,
+                    defaults={'quantity': 0, 'reserved_quantity': 0}
+                )
+                if stock.available_quantity < requested_qty:
+                    product_name = stock.product.name if stock.product else 'Sản phẩm'
+                    return None, f'{product_name} chỉ còn khả dụng {stock.available_quantity}, yêu cầu {requested_qty}.'
+
+            for product_id, requested_qty in requested.items():
+                stock = ProductStock.objects.select_for_update().get(product_id=product_id)
+                stock.reserved_quantity += requested_qty
+                stock.save(update_fields=['reserved_quantity', 'last_updated'])
+
+            receipt_data = {'note': note}
+            receipt = ExportReceiptRepository.create_with_items(receipt_data, items_data, user)
+            return receipt, None
 
     def approve_receipt(self, receipt_id, reviewed_by):
         """Kế toán duyệt phiếu"""
@@ -181,5 +209,8 @@ class ExportReceiptService:
                 return None, f'Dòng {idx+1}: số lượng phải lớn hơn 0.'
             item['quantity'] = qty
 
-        receipt = ExportReceiptRepository.resubmit(receipt, items_data, note)
+        try:
+            receipt = ExportReceiptRepository.resubmit(receipt, items_data, note)
+        except ValueError as exc:
+            return None, str(exc)
         return receipt, None

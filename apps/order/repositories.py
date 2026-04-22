@@ -1,7 +1,6 @@
 from django.db import transaction
 from django.db.models import Q
-from .models import SalesOrder, SalesOrderItem, CustomerDebt
-from decimal import Decimal
+from .models import SalesOrder, SalesOrderItem
 
 
 class SalesOrderRepository:
@@ -56,7 +55,7 @@ class SalesOrderRepository:
         errors = []
         for item in items_data:
             stock = ProductStockRepository.get_stock(item['product_id'])
-            available = stock.quantity if stock else 0
+            available = stock.available_quantity if stock else 0
             if available < item['quantity']:
                 from apps.product.models import Product
                 try:
@@ -110,69 +109,46 @@ class SalesOrderRepository:
     @staticmethod
     @transaction.atomic
     def update_status(order, status):
-        """Cập nhật trạng thái đơn - nếu hủy + phiếu đã duyệt thì hoàn hàng"""
+        """Cập nhật trạng thái đơn và đồng bộ reservation/phiếu xuất liên quan."""
         old_status = order.status
         order.status = status
         order.save(update_fields=['status'])
 
-        # Nếu chuyển sang CANCELLED → hoàn hàng CHỈ nếu phiếu xuất đã duyệt
+        # Nếu chuyển sang CANCELLED: hoàn kho cho phiếu đã duyệt và nhả reservation của phiếu chờ duyệt.
         if status == 'CANCELLED':
             from apps.warehouse.models import ExportReceipt
-            # Tìm phiếu xuất liên quan
-            for receipt in ExportReceipt.objects.filter(note__icontains=order.order_code):
-                # Chỉ hoàn khi phiếu đã được duyệt (stock đã bị trừ)
+
+            receipts = ExportReceipt.objects.filter(sales_order=order).prefetch_related('items__product')
+            if not receipts.exists():
+                receipts = ExportReceipt.objects.filter(note__icontains=order.order_code).prefetch_related('items__product')
+
+            for receipt in receipts:
                 if receipt.status == 'APPROVED':
-                    # Hoàn các sản phẩm từ phiếu xuất
                     from apps.warehouse.models import ProductStock
                     for item in receipt.items.all():
                         stock, _ = ProductStock.objects.get_or_create(
                             product=item.product,
-                            defaults={'quantity': 0}
+                            defaults={'quantity': 0, 'reserved_quantity': 0}
                         )
                         stock.quantity += item.quantity
+                        if stock.reserved_quantity < 0:
+                            stock.reserved_quantity = 0
                         stock.save()
-                    # Đổi trạng thái phiếu sang REJECTED (đã hoàn hàng)
                     receipt.status = 'REJECTED'
                     receipt.rejection_note = f'Hoàn hàng do hủy đơn {order.order_code}'
                     receipt.save()
+                elif receipt.status == 'PENDING':
+                    from apps.warehouse.models import ProductStock
+                    for item in receipt.items.all():
+                        stock, _ = ProductStock.objects.get_or_create(
+                            product=item.product,
+                            defaults={'quantity': 0, 'reserved_quantity': 0}
+                        )
+                        released = item.quantity if stock.reserved_quantity >= item.quantity else stock.reserved_quantity
+                        stock.reserved_quantity -= released
+                        stock.save()
+                    receipt.status = 'REJECTED'
+                    receipt.rejection_note = f'Hủy phiếu do hủy đơn {order.order_code}'
+                    receipt.save()
 
         return order
-
-
-class CustomerDebtRepository:
-
-    @staticmethod
-    def get_all(status=None, search_customer=None):
-        queryset = CustomerDebt.objects.select_related('sales_order').all()
-        if status:
-            queryset = queryset.filter(status=status)
-        if search_customer:
-            queryset = queryset.filter(customer_name__icontains=search_customer)
-        return queryset.order_by('due_date')
-
-    @staticmethod
-    def get_by_id(debt_id):
-        try:
-            return CustomerDebt.objects.select_related('sales_order').get(pk=debt_id)
-        except CustomerDebt.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_by_sales_order(order_id):
-        return CustomerDebt.objects.filter(sales_order_id=order_id).order_by('due_date')
-
-    @staticmethod
-    def get_pending_debts():
-        return CustomerDebt.objects.select_related('sales_order').filter(
-            status='PENDING'
-        ).order_by('due_date')
-
-    @staticmethod
-    def create(data):
-        return CustomerDebt.objects.create(**data)
-
-    @staticmethod
-    def update_status(debt, status):
-        debt.status = status
-        debt.save(update_fields=['status'])
-        return debt

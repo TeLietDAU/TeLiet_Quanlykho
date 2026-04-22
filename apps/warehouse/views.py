@@ -1,4 +1,10 @@
 import json
+import os
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from urllib.parse import urlencode
+
 from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -6,6 +12,8 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Q
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.urls import reverse
 
 from apps.product.models import Product
 from .services import ImportReceiptService, StockService, ExportReceiptService
@@ -65,6 +73,19 @@ def _get_export_receipt_stats():
 
 
 PAGE_SIZE = 5  # Số phiếu mỗi trang
+
+
+def _get_user_display_name(user):
+    full_name = ''
+    if hasattr(user, 'get_full_name'):
+        full_name = (user.get_full_name() or '').strip()
+    return full_name or getattr(user, 'username', '') or 'Khong ro'
+
+
+def _format_report_number(value):
+    decimal_value = Decimal(str(value))
+    formatted = f"{decimal_value:,.10f}".rstrip('0').rstrip('.')
+    return formatted or '0'
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -226,6 +247,8 @@ class StockListView(LoginRequiredMixin, View):
         })
 
 
+
+
 # ═══════════════════════════════════════════════════════════════
 # XUẤT KHO — Tất cả role đều có thể duyệt
 # ═══════════════════════════════════════════════════════════════
@@ -306,6 +329,10 @@ class ExportReceiptDetailView(LoginRequiredMixin, View):
 
 class ExportReceiptApproveView(LoginRequiredMixin, View):
     def post(self, request, pk):
+        if request.user.role not in EXPORT_APPROVE_ROLES and not request.user.is_superuser:
+            messages.error(request, 'Bạn không có quyền duyệt phiếu xuất.')
+            return redirect('warehouse:export_list')
+
         service = ExportReceiptService()
         success, msg = service.approve_receipt(pk, request.user)
         if success:
@@ -317,6 +344,10 @@ class ExportReceiptApproveView(LoginRequiredMixin, View):
 
 class ExportReceiptRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
+        if request.user.role not in EXPORT_APPROVE_ROLES and not request.user.is_superuser:
+            messages.error(request, 'Bạn không có quyền từ chối phiếu xuất.')
+            return redirect('warehouse:export_list')
+
         service = ExportReceiptService()
         rejection_note = request.POST.get('rejection_note', '')
         success, msg = service.reject_receipt(pk, request.user, rejection_note)
