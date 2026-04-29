@@ -8,15 +8,16 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.utils import timezone
-from django.db.models import Q, Sum
 from django.core.paginator import Paginator
-from django.http import HttpResponse
-from django.urls import reverse
+from django.db.models import Q, Sum
+from django.utils import timezone
 
 from apps.product.models import Product
-from .services import SalesOrderService
+
 from .models import SalesOrder, SalesOrderItem
+from .services import SalesOrderService
+from django.http import HttpResponse
+from django.urls import reverse
 
 
 PAGE_SIZE = 5
@@ -26,37 +27,40 @@ def _products_json():
     products = Product.objects.select_related('category').all().order_by('name')
     return [
         {
-            'id': str(p.id),
-            'name': p.name,
-            'base_unit': p.base_unit,
-            'base_price': float(p.base_price),
-            'category': p.category.name if p.category else '',
+            'id': str(product.id),
+            'name': product.name,
+            'base_unit': product.base_unit,
+            'base_price': float(product.base_price),
+            'category': product.category.name if product.category else '',
         }
-        for p in products
+        for product in products
     ]
 
 
 def _stocks_json():
     from apps.warehouse.repositories import ProductStockRepository
+
     stocks = ProductStockRepository.get_all()
     return {str(s.product_id): float(s.available_quantity) for s in stocks}
 
 
 def _parse_items_from_post(post_data):
     items = []
-    i = 0
+    index = 0
     while True:
-        product_id = post_data.get(f'product_id_{i}')
+        product_id = post_data.get(f'product_id_{index}')
         if product_id is None:
             break
         if product_id:
-            items.append({
-                'product_id': product_id,
-                'quantity': post_data.get(f'quantity_{i}', 0),
-                'unit_price': post_data.get(f'unit_price_{i}', 0),
-                'note': post_data.get(f'item_note_{i}', ''),
-            })
-        i += 1
+            items.append(
+                {
+                    'product_id': product_id,
+                    'quantity': post_data.get(f'quantity_{index}', 0),
+                    'unit_price': post_data.get(f'unit_price_{index}', 0),
+                    'note': post_data.get(f'item_note_{index}', ''),
+                }
+            )
+        index += 1
     return items
 
 
@@ -65,6 +69,7 @@ def _get_sales_order_stats():
     return {
         'total_orders': SalesOrder.objects.count(),
         'pending_orders': SalesOrder.objects.filter(status='WAITING').count(),
+        'picked_orders': SalesOrder.objects.filter(status='PICKED').count(),
         'total_items': SalesOrderItem.objects.aggregate(total=Sum('quantity'))['total'] or 0,
         'today_transactions': SalesOrder.objects.filter(created_at__date=today).count(),
     }
@@ -133,8 +138,6 @@ def _format_report_number(value):
 
 
 class SalesOrderListView(LoginRequiredMixin, View):
-    """Danh sách đơn hàng"""
-
     def get(self, request):
         service = SalesOrderService()
         user = request.user
@@ -178,46 +181,49 @@ class SalesOrderListView(LoginRequiredMixin, View):
 
         if action == 'update_status':
             if user.role == 'SALE' and not user.is_superuser:
-                messages.error(request, 'Bạn không có quyền cập nhật trạng thái đơn hàng.')
+                messages.error(request, 'Ban khong co quyen cap nhat trang thai don hang.')
                 return redirect('order:sales_list')
 
             order_id = request.POST.get('order_id')
             new_status = request.POST.get('status')
 
-            allowed_statuses = ['CONFIRMED', 'WAITING', 'DONE', 'CANCELLED']
-            if new_status not in allowed_statuses:
-                messages.error(request, 'Trạng thái không hợp lệ.')
+            if new_status not in ['CONFIRMED', 'WAITING', 'PICKED', 'DONE', 'CANCELLED']:
+                messages.error(request, 'Trang thai khong hop le.')
                 return redirect('order:sales_list')
 
-            service = SalesOrderService()
-            success, msg = service.update_status(order_id, new_status, updated_by=user)
+            success, message = SalesOrderService().update_status(order_id, new_status, updated_by=user)
             if success:
                 if new_status == 'WAITING':
-                    messages.success(request, f'{msg} Phiếu xuất kho đã được tạo tự động và đang chờ duyệt.')
+                    messages.success(
+                        request,
+                        f'{message} Phieu xuat kho da duoc tao va dang cho thu kho lay hang.',
+                    )
                 else:
-                    messages.success(request, msg)
+                    messages.success(request, message)
             else:
-                messages.error(request, msg)
+                messages.error(request, message)
             return redirect('order:sales_list')
 
         if user.role not in ('SALE', 'ADMIN') and not user.is_superuser:
-            messages.error(request, 'Bạn không có quyền tạo đơn hàng.')
+            messages.error(request, 'Ban khong co quyen tao don hang.')
             return redirect('order:sales_list')
 
-        service = SalesOrderService()
-        customer_name = request.POST.get('customer_name', '')
-        customer_phone = request.POST.get('customer_phone', '')
-        note = request.POST.get('note', '')
-        items_data = _parse_items_from_post(request.POST)
-
-        order, errors = service.create_order(customer_name, customer_phone, note, items_data, user)
+        order, errors = SalesOrderService().create_order(
+            request.POST.get('customer_name', ''),
+            request.POST.get('customer_phone', ''),
+            request.POST.get('note', ''),
+            _parse_items_from_post(request.POST),
+            user,
+        )
 
         if order:
-            messages.success(request, f'Đơn hàng {order.order_code} đã được tạo thành công.')
+            messages.success(
+                request,
+                f'Don hang {order.order_code} da duoc tao. Chuyen sang trang thai cho lay hang de tao phieu xuat.',
+            )
         else:
-            for err in errors:
-                messages.error(request, err['message'])
-
+            for error in errors:
+                messages.error(request, error['message'])
         return redirect('order:sales_list')
 
 
@@ -225,10 +231,9 @@ class SalesOrderListView(LoginRequiredMixin, View):
 
 class SalesOrderDetailView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        service = SalesOrderService()
-        order = service.get_by_id(pk)
+        order = SalesOrderService().get_by_id(pk)
         if not order:
-            messages.error(request, 'Không tìm thấy đơn hàng.')
+            messages.error(request, 'Khong tim thay don hang.')
             return redirect('order:sales_list')
 
         return render(request, 'order/sales_order_detail.html', {

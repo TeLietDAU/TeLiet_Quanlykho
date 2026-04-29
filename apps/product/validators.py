@@ -190,8 +190,8 @@ def validate_category_name_unique(value):
 
 def validate_file_image(file):
     if not file: return
-    if file.size > 2 * 1024 * 1024:
+    if file.size > 5 * 1024 * 1024:
         raise ValidationError("Ảnh vượt quá 2MB")
-    valid_types = ['image/jpeg', 'image/png', 'image/jpg']
+    valid_types = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
     if file.content_type not in valid_types:
         raise ValidationError("Chỉ chấp nhận JPG, JPEG, PNG")

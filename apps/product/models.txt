@@ -97,17 +97,6 @@ class SalesOrder(models.Model):
     class Meta:
         db_table = 'sales_orders'
 
-class CustomerDebt(models.Model):
-    id = models.BigAutoField(primary_key=True) # Giải quyết Warning
-    sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE)
-    customer_name = models.CharField(max_length=100)
-    remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    due_date = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, default='Pending')
-
-    class Meta:
-        db_table = 'customer_debts'
-
 class WarehouseTransaction(models.Model):
     id = models.BigAutoField(primary_key=True) # Giải quyết Warning
     code = models.CharField(max_length=20, unique=True)

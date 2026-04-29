@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 
     # Apps của dự án
     'apps.authentication',
-    'apps.order',                           # Đơn hàng, công nợ
+    'apps.order',           # Đơn hàng
     'apps.warehouse.apps.WarehouseConfig',  # Nhập kho, tồn kho
     'apps.product',
     'apps.inventory.apps.InventoryConfig',  # Kiểm kê & Hao hụt
@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.notifications_context',
             ],
         },
     },

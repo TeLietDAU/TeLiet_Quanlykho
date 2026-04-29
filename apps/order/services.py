@@ -1,15 +1,24 @@
-from .repositories import SalesOrderRepository
 from decimal import Decimal
 from django.db import transaction
 
-class SalesOrderService:
+from .repositories import SalesOrderRepository
 
-    # Luồng trạng thái HỢP LỆ — chỉ đi 1 chiều, không quay lại
+
+class SalesOrderService:
     VALID_TRANSITIONS = {
         'CONFIRMED': ['WAITING', 'CANCELLED'],
-        'WAITING':   ['DONE', 'CANCELLED'],
-        'DONE':      [],
+        'WAITING': ['CANCELLED'],
+        'PICKED': ['DONE', 'CANCELLED'],
+        'DONE': [],
         'CANCELLED': [],
+    }
+
+    STATUS_LABELS = {
+        'CONFIRMED': 'Đã xác nhận',
+        'WAITING': 'Chờ lấy hàng',
+        'PICKED': 'Đã lấy hàng',
+        'DONE': 'Hoàn thành',
+        'CANCELLED': 'Đã huỷ',
     }
 
     def __init__(self):
@@ -25,28 +34,23 @@ class SalesOrderService:
         return SalesOrderRepository.get_by_user(user)
 
     def create_order(self, customer_name, customer_phone, note, items_data, user):
-        """
-        Sale tạo đơn hàng.
-        Hệ thống tự kiểm tra kho và trừ ngay nếu đủ.
-        Trả về (order, None) hoặc (None, errors_list)
-        """
         if not customer_name or not customer_name.strip():
             return None, [{'message': 'Vui lòng nhập tên khách hàng.'}]
-
         if not items_data:
             return None, [{'message': 'Đơn hàng phải có ít nhất 1 sản phẩm.'}]
 
         cleaned_items = []
-        for idx, item in enumerate(items_data):
+        for index, item in enumerate(items_data):
             if not item.get('product_id'):
-                return None, [{'message': f'Dòng {idx+1}: chưa chọn sản phẩm.'}]
+                return None, [{'message': f'Dong {index + 1}: chưa chọn sản phẩm.'}]
             try:
-                qty = Decimal(str(item.get('quantity', 0)))
-            except (ValueError, TypeError):
-                return None, [{'message': f'Dòng {idx+1}: số lượng không hợp lệ.'}]
-            if qty <= 0:
-                return None, [{'message': f'Dòng {idx+1}: số lượng phải lớn hơn 0.'}]
-            item['quantity'] = qty
+                quantity = Decimal(str(item.get('quantity', 0)))
+            except (ValueError, TypeError, ArithmeticError):
+                return None, [{'message': f'Dong {index + 1}: số lượng không hợp lệ.'}]
+            if quantity <= 0:
+                return None, [{'message': f'Dong {index + 1}: số lượng phải lớn hơn 0.'}]
+
+            item['quantity'] = quantity
             cleaned_items.append(item)
 
         order_data = {
@@ -54,26 +58,17 @@ class SalesOrderService:
             'customer_phone': customer_phone.strip() if customer_phone else '',
             'note': note or '',
         }
-
-        order, errors = SalesOrderRepository.create_with_items(order_data, cleaned_items, user)
-        return order, errors
+        return SalesOrderRepository.create_with_items(order_data, cleaned_items, user)
 
     def update_status(self, order_id, new_status, updated_by=None):
         order = SalesOrderRepository.get_by_id(order_id)
         if not order:
             return False, 'Không tìm thấy đơn hàng.'
 
-        # Kiểm tra luồng hợp lệ
-        allowed = self.VALID_TRANSITIONS.get(order.status, [])
-        if new_status not in allowed:
-            status_labels = {
-                'CONFIRMED': 'Đã xác nhận',
-                'WAITING': 'Chờ lấy hàng',
-                'DONE': 'Hoàn thành',
-                'CANCELLED': 'Đã hủy',
-            }
-            current_label = status_labels.get(order.status, order.status)
-            new_label = status_labels.get(new_status, new_status)
+        allowed_transitions = self.VALID_TRANSITIONS.get(order.status, [])
+        if new_status not in allowed_transitions:
+            current_label = self.STATUS_LABELS.get(order.status, order.status)
+            new_label = self.STATUS_LABELS.get(new_status, new_status)
             return False, f'Không thể chuyển từ "{current_label}" sang "{new_label}".'
 
         with transaction.atomic():
@@ -99,7 +94,7 @@ class SalesOrderService:
                     order.save(update_fields=['status'])
                     return False, create_message
 
-        return True, 'Cập nhật trạng thái thành công.'
+        return True, 'Cập nhập trạng thái thành công.'
 
     def _reserve_stock_for_order(self, order):
         from apps.warehouse.models import ProductStock
@@ -140,13 +135,13 @@ class SalesOrderService:
             stock.save(update_fields=['reserved_quantity', 'last_updated'])
 
     def _create_export_receipt_for_order(self, order, user):
-        """Tạo phiếu xuất kho tự động từ đơn hàng khi chuyển sang Chờ lấy hàng"""
         from apps.warehouse.repositories import ExportReceiptRepository
+
         items_data = [
             {
                 'product_id': str(item.product_id),
-                'quantity': float(item.quantity),
-                'unit_price': float(item.unit_price),
+                'quantity': item.quantity,
+                'unit_price': item.unit_price,
                 'note': f'Đơn hàng {order.order_code}',
             }
             for item in order.items.select_related('product').all()

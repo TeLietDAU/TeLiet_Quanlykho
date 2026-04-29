@@ -1,20 +1,17 @@
 from django.db import transaction
 from django.db.models import Q
+
 from .models import SalesOrder, SalesOrderItem
 
 
 class SalesOrderRepository:
-
     @staticmethod
     def get_all(status=None, search=None):
         queryset = SalesOrder.objects.select_related('created_by').prefetch_related('items__product').all()
         if status:
             queryset = queryset.filter(status=status)
         if search:
-            queryset = queryset.filter(
-                Q(customer_name__icontains=search) |
-                Q(order_code__icontains=search)
-            )
+            queryset = queryset.filter(Q(customer_name__icontains=search) | Q(order_code__icontains=search))
         return queryset.order_by('-created_at')
 
     @staticmethod
@@ -35,75 +32,59 @@ class SalesOrderRepository:
     @staticmethod
     def generate_order_code():
         from django.utils import timezone
+
         date_str = timezone.now().strftime('%Y%m%d')
-        count = SalesOrder.objects.filter(
-            order_code__startswith=f'DH-{date_str}'
-        ).count() + 1
+        count = SalesOrder.objects.filter(order_code__startswith=f'DH-{date_str}').count() + 1
         return f'DH-{date_str}-{count:03d}'
 
     @staticmethod
     @transaction.atomic
     def create_with_items(order_data, items_data, user):
-        """
-        Tạo đơn hàng + các dòng sản phẩm.
-        Trả về (order, None) nếu thành công.
-        Trả về (None, error_list) nếu không đủ tồn kho.
-        """
+        from apps.product.models import Product
         from apps.warehouse.repositories import ProductStockRepository
 
-        # Kiểm tra tồn kho trước
         errors = []
         for item in items_data:
             stock = ProductStockRepository.get_stock(item['product_id'])
             available = stock.available_quantity if stock else 0
             if available < item['quantity']:
-                from apps.product.models import Product
                 try:
                     product = Product.objects.get(pk=item['product_id'])
                     name = product.name
                     unit = product.base_unit
                 except Product.DoesNotExist:
-                    name = 'Sản phẩm không tồn tại'
+                    name = 'San pham khong ton tai'
                     unit = ''
-                errors.append({
-                    'product_id': item['product_id'],
-                    'product_name': name,
-                    'requested': item['quantity'],
-                    'available': available,
-                    'unit': unit,
-                    'message': f'"{name}" chỉ còn {available} {unit}, bạn yêu cầu {item["quantity"]} {unit}.'
-                })
+                errors.append(
+                    {
+                        'product_id': item['product_id'],
+                        'product_name': name,
+                        'requested': item['quantity'],
+                        'available': available,
+                        'unit': unit,
+                        'message': f'"{name}" chi con {available} {unit}, ban yeu cau {item["quantity"]} {unit}.',
+                    }
+                )
 
         if errors:
             return None, errors
 
-        # Tạo đơn hàng
         order_data['order_code'] = SalesOrderRepository.generate_order_code()
         order_data['created_by'] = user
         order_data['status'] = 'CONFIRMED'
-
         order = SalesOrder.objects.create(**order_data)
 
-        item_instances = []
-        for item in items_data:
-            item_instances.append(SalesOrderItem(
-                order=order,
-                product_id=item['product_id'],
-                quantity=item['quantity'],
-                unit_price=item.get('unit_price', 0),
-            ))
-
-            # KHÔNG trừ kho ngay - chỉ trừ khi phiếu xuất được duyệt
-            # Stock sẽ tự động được trừ khi ExportReceipt.approve()
-            # from apps.warehouse.models import ProductStock
-            # stock, _ = ProductStock.objects.get_or_create(
-            #     product_id=item['product_id'],
-            #     defaults={'quantity': 0}
-            # )
-            # stock.quantity -= Decimal(str(item['quantity']))
-            # stock.save()
-
-        SalesOrderItem.objects.bulk_create(item_instances)
+        SalesOrderItem.objects.bulk_create(
+            [
+                SalesOrderItem(
+                    order=order,
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    unit_price=item.get('unit_price', 0),
+                )
+                for item in items_data
+            ]
+        )
         return order, None
 
     @staticmethod
@@ -116,6 +97,7 @@ class SalesOrderRepository:
 
         # Nếu chuyển sang CANCELLED: hoàn kho cho phiếu đã duyệt và nhả reservation của phiếu chờ duyệt.
         if status == 'CANCELLED':
+            from apps.warehouse.repositories import ExportReceiptRepository
             from apps.warehouse.models import ExportReceipt
 
             receipts = ExportReceipt.objects.filter(sales_order=order).prefetch_related('items__product')

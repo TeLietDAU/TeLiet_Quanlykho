@@ -10,8 +10,8 @@ from .validators import (
     ProductUnitValidator,
     validate_product_name_unique,
     validate_category_name_unique,
-    validate_file_image,
 )
+from .file_validators import validate_file_image
 
 # Cấu hình chung cho các Input
 CONTROL_CLASS = 'search-input'

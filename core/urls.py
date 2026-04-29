@@ -21,6 +21,7 @@ urlpatterns = [
     # Main page
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('accounts/', views.accounts_view, name='accounts'),
+    path('account/settings/', views.profile_settings_view, name='profile_settings'),
 
     # App routes
     path('', include('apps.product.urls')),
