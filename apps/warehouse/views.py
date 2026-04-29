@@ -1,13 +1,20 @@
 import json
+import os
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from urllib.parse import urlencode
 
-from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.http import HttpResponse
-from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views import View
+from django.http import HttpResponse
+from django.urls import reverse
 
 from apps.product.models import Product
 
@@ -82,6 +89,26 @@ def _get_export_receipt_stats():
         'today_transactions': ExportReceipt.objects.filter(created_at__date=today).count(),
     }
 
+
+PAGE_SIZE = 5  # Số phiếu mỗi trang
+
+
+def _get_user_display_name(user):
+    full_name = ''
+    if hasattr(user, 'get_full_name'):
+        full_name = (user.get_full_name() or '').strip()
+    return full_name or getattr(user, 'username', '') or 'Khong ro'
+
+
+def _format_report_number(value):
+    decimal_value = Decimal(str(value))
+    formatted = f"{decimal_value:,.10f}".rstrip('0').rstrip('.')
+    return formatted or '0'
+
+
+# ═══════════════════════════════════════════════════════════════
+# NHẬP KHO
+# ═══════════════════════════════════════════════════════════════
 
 class ImportReceiptListView(LoginRequiredMixin, View):
     def get(self, request):
@@ -236,17 +263,23 @@ class StockListView(LoginRequiredMixin, View):
 
         paginator = Paginator(stocks, 12)
         page_obj = paginator.get_page(page_number)
-        return render(
-            request,
-            'warehouse/stock_list.html',
-            {
-                'stocks': page_obj,
-                'page_obj': page_obj,
-                'paginator': paginator,
-                'search_query': search_query,
-                'user_role': 'ADMIN' if request.user.is_superuser else request.user.role,
-            },
-        )
+
+        return render(request, 'warehouse/stock_list.html', {
+            'stocks': page_obj,
+            'page_obj': page_obj,
+            'paginator': paginator,
+            'search_query': search_query,
+            'user_role': 'ADMIN' if request.user.is_superuser else request.user.role,
+        })
+
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# XUẤT KHO — Tất cả role đều có thể duyệt
+# ═══════════════════════════════════════════════════════════════
+
+EXPORT_APPROVE_ROLES = ('KHO', 'KE_TOAN', 'ADMIN', 'SALE')
 
 
 class ExportReceiptListView(LoginRequiredMixin, View):
@@ -371,25 +404,32 @@ class ExportReceiptMarkPickedView(LoginRequiredMixin, View):
 
 class ExportReceiptApproveView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen duyet phieu.')
+        if request.user.role not in EXPORT_APPROVE_ROLES and not request.user.is_superuser:
+            messages.error(request, 'Bạn không có quyền duyệt phiếu xuất.')
             return redirect('warehouse:export_list')
-        success, message = ExportReceiptService().approve_receipt(pk, request.user)
-        messages.success(request, message) if success else messages.error(request, message)
+
+        service = ExportReceiptService()
+        success, msg = service.approve_receipt(pk, request.user)
+        if success:
+            messages.success(request, msg)
+        else:
+            messages.error(request, msg)
         return redirect('warehouse:export_list')
 
 
 class ExportReceiptRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if request.user.role not in ('KE_TOAN', 'ADMIN') and not request.user.is_superuser:
-            messages.error(request, 'Ban khong co quyen tu choi phieu.')
+        if request.user.role not in EXPORT_APPROVE_ROLES and not request.user.is_superuser:
+            messages.error(request, 'Bạn không có quyền từ chối phiếu xuất.')
             return redirect('warehouse:export_list')
-        success, message = ExportReceiptService().reject_receipt(
-            pk,
-            request.user,
-            request.POST.get('rejection_note', ''),
-        )
-        messages.warning(request, message) if success else messages.error(request, message)
+
+        service = ExportReceiptService()
+        rejection_note = request.POST.get('rejection_note', '')
+        success, msg = service.reject_receipt(pk, request.user, rejection_note)
+        if success:
+            messages.warning(request, msg)
+        else:
+            messages.error(request, msg)
         return redirect('warehouse:export_list')
 
 

@@ -46,7 +46,7 @@ class SalesOrderRepository:
         errors = []
         for item in items_data:
             stock = ProductStockRepository.get_stock(item['product_id'])
-            available = stock.quantity if stock else 0
+            available = stock.available_quantity if stock else 0
             if available < item['quantity']:
                 try:
                     product = Product.objects.get(pk=item['product_id'])
@@ -90,19 +90,47 @@ class SalesOrderRepository:
     @staticmethod
     @transaction.atomic
     def update_status(order, status):
+        """Cập nhật trạng thái đơn và đồng bộ reservation/phiếu xuất liên quan."""
+        old_status = order.status
         order.status = status
         order.save(update_fields=['status'])
 
+        # Nếu chuyển sang CANCELLED: hoàn kho cho phiếu đã duyệt và nhả reservation của phiếu chờ duyệt.
         if status == 'CANCELLED':
             from apps.warehouse.repositories import ExportReceiptRepository
             from apps.warehouse.models import ExportReceipt
 
-            for receipt in ExportReceipt.objects.filter(sales_order=order).prefetch_related('items__product'):
-                if receipt.stock_deducted:
-                    ExportReceiptRepository.restore_stock_for_receipt(receipt)
-                if receipt.status != 'REJECTED':
+            receipts = ExportReceipt.objects.filter(sales_order=order).prefetch_related('items__product')
+            if not receipts.exists():
+                receipts = ExportReceipt.objects.filter(note__icontains=order.order_code).prefetch_related('items__product')
+
+            for receipt in receipts:
+                if receipt.status == 'APPROVED':
+                    from apps.warehouse.models import ProductStock
+                    for item in receipt.items.all():
+                        stock, _ = ProductStock.objects.get_or_create(
+                            product=item.product,
+                            defaults={'quantity': 0, 'reserved_quantity': 0}
+                        )
+                        stock.quantity += item.quantity
+                        if stock.reserved_quantity < 0:
+                            stock.reserved_quantity = 0
+                        stock.save()
                     receipt.status = 'REJECTED'
-                    receipt.rejection_note = f'Hoan hang do huy don {order.order_code}'
-                    receipt.save(update_fields=['status', 'rejection_note'])
+                    receipt.rejection_note = f'Hoàn hàng do hủy đơn {order.order_code}'
+                    receipt.save()
+                elif receipt.status == 'PENDING':
+                    from apps.warehouse.models import ProductStock
+                    for item in receipt.items.all():
+                        stock, _ = ProductStock.objects.get_or_create(
+                            product=item.product,
+                            defaults={'quantity': 0, 'reserved_quantity': 0}
+                        )
+                        released = item.quantity if stock.reserved_quantity >= item.quantity else stock.reserved_quantity
+                        stock.reserved_quantity -= released
+                        stock.save()
+                    receipt.status = 'REJECTED'
+                    receipt.rejection_note = f'Hủy phiếu do hủy đơn {order.order_code}'
+                    receipt.save()
 
         return order

@@ -4,7 +4,8 @@ from .api_views import (
     LogoutAPIView,
     UserProfileAPIView,
     ChangePasswordAPIView,
-    CreateSessionFromTokenView
+    CreateSessionFromTokenView,
+    UserUpdateAPIView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -27,5 +28,8 @@ urlpatterns = [
     
     # POST /api/xac-thuc/create-session/ - Tạo Django session từ JWT token
     path('create-session/', CreateSessionFromTokenView.as_view(), name='api_create_session'),
+
+    # PUT/PATCH /api/xac-thuc/update-profile/ - Cập nhật thông tin cá nhân
+    path('update-profile/', UserUpdateAPIView.as_view(), name='api_update_profile'),
 ]
 

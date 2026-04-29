@@ -300,6 +300,33 @@ class ExportReceiptRepository:
         if order and order.status == 'PICKED':
             order.status = 'DONE'
             order.save(update_fields=['status'])
+        # Trừ tồn kho
+        for item in receipt.items.select_related('product').all():
+            stock, _ = ProductStock.objects.get_or_create(
+                product=item.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0}
+            )
+            stock.quantity -= item.quantity
+            released = item.quantity if stock.reserved_quantity >= item.quantity else stock.reserved_quantity
+            stock.reserved_quantity -= released
+            if stock.quantity < 0:
+                stock.quantity = 0  # Không cho âm kho
+            if stock.reserved_quantity < 0:
+                stock.reserved_quantity = 0
+            stock.save()
+
+        # Tự động cập nhật đơn hàng → DONE
+        order = receipt.sales_order
+        if order is None:
+            order_code = ExportReceiptRepository._extract_order_code_from_note(receipt.note)
+            if order_code:
+                from apps.order.models import SalesOrder
+                order = SalesOrder.objects.filter(order_code=order_code).first()
+
+        if order and order.status in ['WAITING', 'CONFIRMED']:
+            order.status = 'DONE'
+            order.save(update_fields=['status'])
+
         return receipt
 
     @staticmethod
@@ -312,7 +339,19 @@ class ExportReceiptRepository:
 
         if receipt.stock_deducted:
             ExportReceiptRepository.restore_stock_for_receipt(receipt)
+        # Nhả phần đã giữ chỗ khi phiếu bị từ chối.
+        else:
+            # Chưa deduct nhưng đã reserve → nhả reserved_quantity
+            for item in receipt.items.select_related('product').all():
+                stock, _ = ProductStock.objects.get_or_create(
+                    product=item.product,
+                    defaults={'quantity': 0, 'reserved_quantity': 0}
+                )
+                released = min(item.quantity, stock.reserved_quantity)
+                stock.reserved_quantity = max(stock.reserved_quantity - released, 0)
+                stock.save(update_fields=['reserved_quantity', 'last_updated'])
 
+        # Trả order về WAITING để có thể tạo phiếu xuất mới
         order = ExportReceiptRepository._get_linked_order(receipt)
         if order and order.status in ['WAITING', 'PICKED']:
             order.status = 'WAITING'
@@ -322,9 +361,43 @@ class ExportReceiptRepository:
     @staticmethod
     @transaction.atomic
     def resubmit(receipt, items_data, note=''):
+        """Thủ kho sửa lại phiếu bị từ chối và gửi lại."""
+
+        # Bước 1: Nhả stock cũ
         if receipt.stock_deducted:
             ExportReceiptRepository.restore_stock_for_receipt(receipt)
+        else:
+            # Nhả reserved_quantity từ lần submit trước
+            for item in receipt.items.select_related('product').all():
+                stock, _ = ProductStock.objects.get_or_create(
+                    product=item.product,
+                    defaults={'quantity': 0, 'reserved_quantity': 0}
+                )
+                released = min(item.quantity, stock.reserved_quantity)
+                stock.reserved_quantity = max(stock.reserved_quantity - released, 0)
+                stock.save(update_fields=['reserved_quantity', 'last_updated'])
 
+        # Bước 2: Kiểm tra tồn kho mới + reserve
+        requested_by_product = {}
+        for item in items_data:
+            product_id = item['product_id']
+            requested_by_product[product_id] = requested_by_product.get(product_id, 0) + item['quantity']
+
+        for product_id, requested_qty in requested_by_product.items():
+            stock, _ = ProductStock.objects.select_for_update().get_or_create(
+                product_id=product_id,
+                defaults={'quantity': 0, 'reserved_quantity': 0}
+            )
+            if stock.available_quantity < requested_qty:
+                product_name = stock.product.name if stock.product else 'Sản phẩm'
+                raise ValueError(f'Không đủ tồn khả dụng để gửi lại phiếu cho {product_name}.')
+
+        for product_id, requested_qty in requested_by_product.items():
+            stock = ProductStock.objects.select_for_update().get(product_id=product_id)
+            stock.reserved_quantity += requested_qty
+            stock.save(update_fields=['reserved_quantity', 'last_updated'])
+
+        # Bước 3: Reset trạng thái phiếu
         receipt.status = 'PREPARING' if receipt.sales_order_id else 'PENDING'
         receipt.rejection_note = ''
         receipt.note = note
@@ -335,22 +408,23 @@ class ExportReceiptRepository:
         receipt.pickup_photo = None
         receipt.save()
 
+        # Bước 4: Thay items
         receipt.items.all().delete()
-        ExportReceiptItem.objects.bulk_create(
-            [
-                ExportReceiptItem(
-                    receipt=receipt,
-                    product_id=item['product_id'],
-                    quantity=item['quantity'],
-                    unit_price=item.get('unit_price', 0),
-                    note=item.get('note', ''),
-                )
-                for item in items_data
-            ]
-        )
+        ExportReceiptItem.objects.bulk_create([
+            ExportReceiptItem(
+                receipt=receipt,
+                product_id=item['product_id'],
+                quantity=item['quantity'],
+                unit_price=item.get('unit_price', 0),
+                note=item.get('note', ''),
+            )
+            for item in items_data
+        ])
 
+        # Bước 5: Cập nhật order
         order = ExportReceiptRepository._get_linked_order(receipt)
         if order and order.status in ['CONFIRMED', 'WAITING', 'PICKED']:
             order.status = 'WAITING'
             order.save(update_fields=['status'])
+
         return receipt

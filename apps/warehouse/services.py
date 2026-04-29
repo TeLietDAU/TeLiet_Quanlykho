@@ -1,10 +1,13 @@
 from decimal import Decimal
 
-from apps.product.models import Product
-
 from .excel_utils import parse_receipt_excel
 from .repositories import ExportReceiptRepository, ImportReceiptRepository, ProductStockRepository
 from .stock_utils import build_stock_payload
+from django.db import transaction
+
+from apps.product.models import Category, Product
+
+from .models import ImportReceiptItem, ExportReceiptItem, ProductStock
 
 
 class ImportReceiptService:
@@ -136,6 +139,9 @@ class StockService:
         return ProductStockRepository.get_stock_payload(product_id)
 
 
+
+
+
 class ExportReceiptService:
     def __init__(self):
         self.repo = ExportReceiptRepository()
@@ -154,16 +160,43 @@ class ExportReceiptService:
 
     def create_receipt(self, note, items_data, user, sales_order=None):
         if not items_data:
-            return None, 'Phieu phai co it nhat 1 san pham.'
+            return None, 'Phiếu phải có ít nhất 1 sản phẩm.'
+
+        # Validate items - CHỈ gọi 1 lần, dùng cleaned_items cho mọi thứ bên dưới
         cleaned_items, error = self._validate_items(items_data)
         if error:
             return None, error
-        receipt_data = {'note': note, 'sales_order': sales_order}
-        try:
-            receipt = ExportReceiptRepository.create_with_items(receipt_data, cleaned_items, user)
-        except ValueError as exc:
-            return None, str(exc)
-        return receipt, None
+
+        # Tổng hợp số lượng theo product từ cleaned_items
+        requested = {}
+        for item in cleaned_items:
+            requested[item['product_id']] = requested.get(item['product_id'], 0) + item['quantity']
+
+        with transaction.atomic():
+            # Pass 1: kiểm tra tồn kho
+            for product_id, requested_qty in requested.items():
+                stock, _ = ProductStock.objects.select_for_update().get_or_create(
+                    product_id=product_id,
+                    defaults={'quantity': 0, 'reserved_quantity': 0}
+                )
+                if stock.available_quantity < requested_qty:
+                    product_name = stock.product.name if stock.product else 'Sản phẩm'
+                    return None, f'{product_name} chỉ còn khả dụng {stock.available_quantity}, yêu cầu {requested_qty}.'
+
+            # Pass 2: cập nhật reserved
+            for product_id, requested_qty in requested.items():
+                stock = ProductStock.objects.select_for_update().get(product_id=product_id)
+                stock.reserved_quantity += requested_qty
+                stock.save(update_fields=['reserved_quantity', 'last_updated'])
+
+            # Tạo phiếu
+            receipt_data = {'note': note, 'sales_order': sales_order}
+            try:
+                receipt = ExportReceiptRepository.create_with_items(receipt_data, cleaned_items, user)
+            except ValueError as exc:
+                return None, str(exc)
+
+            return receipt, None
 
     def import_receipts_from_excel(self, uploaded_file, user):
         groups = parse_receipt_excel(uploaded_file)

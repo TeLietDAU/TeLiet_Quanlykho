@@ -3,6 +3,11 @@ from .repositories import ProductRepository, CategoryRepository, ProductUnitRepo
 from decimal import Decimal
 
 
+def _normalize_name(value):
+
+    return (value or '').strip().casefold()
+
+
 
 class ProductService:
 
@@ -79,8 +84,9 @@ class ProductService:
         """
 
         existing_units = self.unit_repository.get_by_product(product_id)
+        normalized_unit_name = _normalize_name(unit_name)
 
-        if existing_units.filter(unit_name__iexact=unit_name).exists():
+        if any(_normalize_name(unit.unit_name) == normalized_unit_name for unit in existing_units):
 
             return None, "Đơn vị này đã tồn tại cho sản phẩm này."
 
@@ -122,13 +128,17 @@ class CategoryService:
 
             return None, "Tên danh mục không được để trống."
 
+        normalized_name = _normalize_name(name)
+        if not normalized_name:
+            return None, "Tên danh mục không được để trống."
+
             
 
         # Kiểm tra trùng tên (không phân biệt hoa thường)
 
         from .models import Category
 
-        if Category.objects.filter(name__iexact=name).exists():
+        if any(_normalize_name(category_name) == normalized_name for category_name in Category.objects.values_list('name', flat=True)):
 
             return None, f"Danh mục '{name}' đã tồn tại trong hệ thống."
 
