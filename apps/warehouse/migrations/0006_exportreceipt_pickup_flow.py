@@ -6,7 +6,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('warehouse', '0005_readd_sales_order_to_exportreceipt'),
+        ('warehouse', '0005_exportreceipt_sales_order_and_more'),
     ]
 
     operations = [

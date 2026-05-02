@@ -5,9 +5,9 @@ from .repositories import ExportReceiptRepository, ImportReceiptRepository, Prod
 from .stock_utils import build_stock_payload
 from django.db import transaction
 
-from apps.product.models import Category, Product
+from apps.product.models import Product
 
-from .models import ImportReceiptItem, ExportReceiptItem, ProductStock
+from .models import ProductStock
 
 
 class ImportReceiptService:

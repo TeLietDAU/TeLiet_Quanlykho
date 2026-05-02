@@ -3,15 +3,13 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.utils import timezone
-from django.http import HttpResponse
 from django.urls import reverse
 from urllib.parse import urlencode
 import uuid
 from datetime import datetime
-import os
 
-from apps.reports.utils import format_report_number, get_user_display_name
-from apps.reports.services import StockReportService, LossReportService, OrderReportService
+from apps.reports.utils import get_user_display_name
+from apps.reports.services import StockReportService
 
 def _resolve_report_category_label(service, category_id):
     label = 'Tat ca danh muc'
@@ -139,7 +137,7 @@ class StockReportExportPdfView(LoginRequiredMixin, View):
         )
 
 
-from apps.order.models import SalesOrder
+
 from apps.order.services import SalesOrderService
 from apps.order.views import _parse_sales_report_filters, _get_base_orders_for_user, _apply_sales_order_filters
 

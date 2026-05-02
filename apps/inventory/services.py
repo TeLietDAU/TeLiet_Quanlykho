@@ -5,13 +5,10 @@ Business logic layer for inventory workflows.
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.utils import timezone
-
 from apps.product.models import Product
 
 from .models import InventoryAudit, InventoryLoss
 from .repositories import InventoryRepository, LossRepository
-from apps.reports.repositories import ReportRepository
 
 
 class InventoryService:

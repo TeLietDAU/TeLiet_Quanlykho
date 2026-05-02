@@ -157,7 +157,3 @@ class SalesOrderService:
             import logging
             logging.getLogger(__name__).error(f'Lỗi tạo phiếu xuất cho đơn {order.order_code}: {e}')
             return False, 'Không thể tạo phiếu xuất tự động cho đơn hàng.'
-
-
-    def ready(self):
-        from . import report_service

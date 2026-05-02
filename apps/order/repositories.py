@@ -91,13 +91,11 @@ class SalesOrderRepository:
     @transaction.atomic
     def update_status(order, status):
         """Cập nhật trạng thái đơn và đồng bộ reservation/phiếu xuất liên quan."""
-        old_status = order.status
         order.status = status
         order.save(update_fields=['status'])
 
         # Nếu chuyển sang CANCELLED: hoàn kho cho phiếu đã duyệt và nhả reservation của phiếu chờ duyệt.
         if status == 'CANCELLED':
-            from apps.warehouse.repositories import ExportReceiptRepository
             from apps.warehouse.models import ExportReceipt
 
             receipts = ExportReceipt.objects.filter(sales_order=order).prefetch_related('items__product')

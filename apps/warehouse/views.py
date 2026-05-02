@@ -1,9 +1,5 @@
 import json
-import os
-import uuid
-from datetime import datetime
 from decimal import Decimal
-from urllib.parse import urlencode
 
 from django.shortcuts import render, redirect
 from django.views import View
@@ -13,8 +9,6 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.utils import timezone
-from django.http import HttpResponse
-from django.urls import reverse
 
 from apps.product.models import Product
 

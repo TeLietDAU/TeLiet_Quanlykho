@@ -9,8 +9,7 @@ from django.db.models import DecimalField, F, Sum, Count
 from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
 
-from apps.product.models import Product
-from apps.warehouse.models import ProductStock, ImportReceiptItem, ExportReceiptItem
+from apps.warehouse.models import ProductStock
 
 from .models import InventoryAudit, InventoryAuditItem, InventoryLoss
 

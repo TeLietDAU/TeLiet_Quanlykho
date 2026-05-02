@@ -15,7 +15,7 @@ from apps.product.models import Category, Product
 from .models import InventoryAudit, InventoryLoss
 from apps.reports.generators import AuditReportGenerator, DiscrepancyReportGenerator, LossReportGenerator
 from apps.reports.repositories import ReportRepository
-from apps.reports.services import StockReportService, LossReportService, OrderReportService
+from apps.reports.services import LossReportService
 from .services import InventoryService, LossService
 
 PAGE_SIZE = 10

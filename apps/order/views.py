@@ -1,8 +1,6 @@
 import json
-import os
 from datetime import datetime
 from decimal import Decimal
-from urllib.parse import urlencode
 
 from django.shortcuts import render, redirect
 from django.views import View
@@ -16,8 +14,6 @@ from apps.product.models import Product
 
 from .models import SalesOrder, SalesOrderItem
 from .services import SalesOrderService
-from django.http import HttpResponse
-from django.urls import reverse
 
 
 PAGE_SIZE = 5

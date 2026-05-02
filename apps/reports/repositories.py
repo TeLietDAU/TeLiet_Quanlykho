@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.db.models import DecimalField, F, Sum
 from django.db.models.functions import Coalesce
-from apps.product.models import Product, Category
+from apps.product.models import Product
 from apps.warehouse.models import ProductStock, ImportReceiptItem, ExportReceiptItem
 from apps.inventory.models import InventoryAudit, InventoryAuditItem, InventoryLoss
 from .models import ReportExportLog
