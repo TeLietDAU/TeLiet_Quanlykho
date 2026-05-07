@@ -190,7 +190,11 @@ class ExportReceiptService:
                 stock.save(update_fields=['reserved_quantity', 'last_updated'])
 
             # Tạo phiếu
-            receipt_data = {'note': note, 'sales_order': sales_order}
+            receipt_data = {
+                'note': note,
+                'sales_order': sales_order,
+                'initial_status': 'PREPARING',
+            }
             try:
                 receipt = ExportReceiptRepository.create_with_items(receipt_data, cleaned_items, user)
             except ValueError as exc:

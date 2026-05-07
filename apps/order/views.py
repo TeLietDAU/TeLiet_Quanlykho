@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.shortcuts import render, redirect
@@ -80,18 +80,18 @@ def _get_user_display_name(user):
 
 def _parse_sales_report_filters(request):
     today = timezone.localdate()
-    first_day = today.replace(day=1)
+    default_from = today - timedelta(days=365)
 
     status_filter = request.GET.get('status', '').strip()
     search_query = request.GET.get('search', '').strip()
-    from_date_str = request.GET.get('from_date', first_day.isoformat())
+    from_date_str = request.GET.get('from_date', default_from.isoformat())
     to_date_str = request.GET.get('to_date', today.isoformat())
 
     try:
         from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date()
         to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date()
     except ValueError:
-        from_date = first_day
+        from_date = default_from
         to_date = today
         messages.error(request, 'Khoảng thời gian không hợp lệ. Hệ thống đã dùng mặc định tháng hiện tại.')
 

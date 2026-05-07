@@ -64,7 +64,10 @@ class ImportReceiptRepository:
         receipt.save()
 
         for item in receipt.items.select_related('product').all():
-            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
+            stock, _ = ProductStock.objects.get_or_create(
+                product=item.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0},
+            )
             stock.quantity += item.quantity
             stock.save()
         return receipt
@@ -244,10 +247,17 @@ class ExportReceiptRepository:
             return receipt
         ExportReceiptRepository._validate_stock_before_deduct(receipt)
         for item in receipt.items.select_related('product').all():
-            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
+            stock, _ = ProductStock.objects.get_or_create(
+                product=item.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0},
+            )
             stock.quantity -= item.quantity
+            released = item.quantity if stock.reserved_quantity >= item.quantity else stock.reserved_quantity
+            stock.reserved_quantity -= released
             if stock.quantity < 0:
                 stock.quantity = 0
+            if stock.reserved_quantity < 0:
+                stock.reserved_quantity = 0
             stock.save()
         receipt.stock_deducted = True
         receipt.save(update_fields=['stock_deducted'])
@@ -258,7 +268,10 @@ class ExportReceiptRepository:
         if not receipt.stock_deducted:
             return receipt
         for item in receipt.items.select_related('product').all():
-            stock, _ = ProductStock.objects.get_or_create(product=item.product, defaults={'quantity': 0})
+            stock, _ = ProductStock.objects.get_or_create(
+                product=item.product,
+                defaults={'quantity': 0, 'reserved_quantity': 0},
+            )
             stock.quantity += item.quantity
             stock.save()
         receipt.stock_deducted = False
@@ -282,6 +295,8 @@ class ExportReceiptRepository:
         if order and order.status == 'WAITING':
             order.status = 'PICKED'
             order.save(update_fields=['status'])
+        if receipt.stock_deducted:
+            return receipt
         return receipt
 
     @staticmethod
@@ -300,6 +315,8 @@ class ExportReceiptRepository:
         if order and order.status == 'PICKED':
             order.status = 'DONE'
             order.save(update_fields=['status'])
+        if receipt.stock_deducted:
+            return receipt
         # Trừ tồn kho
         for item in receipt.items.select_related('product').all():
             stock, _ = ProductStock.objects.get_or_create(

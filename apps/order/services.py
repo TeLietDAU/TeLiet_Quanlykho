@@ -148,7 +148,8 @@ class SalesOrderService:
         ]
         receipt_data = {
             'note': f'Xuất hàng cho đơn {order.order_code} — KH: {order.customer_name}',
-            'sales_order_id': order.id,
+            'sales_order': order,
+            'initial_status': 'PREPARING',
         }
         try:
             ExportReceiptRepository.create_with_items(receipt_data, items_data, user)
