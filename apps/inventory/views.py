@@ -59,7 +59,7 @@ def _is_allowed(user, allowed_roles):
 
 class InventoryAuditListView(LoginRequiredMixin, View):
     def _deny(self, request):
-        messages.error(request, 'Ban khong co quyen truy cap man hinh kiem ke.')
+        messages.error(request, 'Bạn không có quyền truy cập màn hình kiểm kê.')
         return redirect('dashboard')
 
     def get(self, request):
@@ -75,12 +75,12 @@ class InventoryAuditListView(LoginRequiredMixin, View):
         date_from = _parse_date(date_from_raw)
         date_to = _parse_date(date_to_raw)
         if date_from_raw and date_from is None:
-            messages.error(request, 'Ngay bat dau khong hop le. Da bo qua bo loc nay.')
+            messages.error(request, 'Ngày bắt đầu không hợp lệ. Đã bỏ qua bộ lọc này.')
         if date_to_raw and date_to is None:
-            messages.error(request, 'Ngay ket thuc khong hop le. Da bo qua bo loc nay.')
+            messages.error(request, 'Ngày kết thúc không hợp lệ. Đã bỏ qua bộ lọc này.')
 
         if date_from and date_to and date_from > date_to:
-            messages.error(request, 'Ngay bat dau khong duoc lon hon ngay ket thuc.')
+            messages.error(request, 'Ngày bắt đầu không được lớn hơn ngày kết thúc.')
             date_from = None
             date_to = None
 
@@ -118,7 +118,7 @@ class InventoryAuditListView(LoginRequiredMixin, View):
 class InventoryAuditCreateView(LoginRequiredMixin, View):
     def get(self, request):
         if not _is_allowed(request.user, ('KHO', 'ADMIN')):
-            messages.error(request, 'Ban khong co quyen tao phien kiem ke.')
+            messages.error(request, 'Bạn không có quyền tạo phiên kiểm kê.')
             return redirect('inventory:audit_list')
         
         context = {
@@ -130,7 +130,7 @@ class InventoryAuditCreateView(LoginRequiredMixin, View):
 
     def post(self, request):
         if not _is_allowed(request.user, ('KHO', 'ADMIN')):
-            messages.error(request, 'Ban khong co quyen tao phien kiem ke.')
+            messages.error(request, 'Bạn không có quyền tạo phiên kiểm kê.')
             return redirect('inventory:audit_list')
 
         audit_date = _parse_date(_query_value(request.POST, 'audit_date'))
@@ -138,7 +138,7 @@ class InventoryAuditCreateView(LoginRequiredMixin, View):
         product_ids = request.POST.getlist('product_ids')
 
         if audit_date is None:
-            messages.error(request, 'Vui long nhap ngay kiem ke hop le.')
+            messages.error(request, 'Vui lòng nhập ngày kiểm kê hợp lệ.')
             return render(request, 'inventory/audit_create.html', {
                 'products': Product.objects.select_related('category').all().order_by('name'),
                 'default_audit_date': timezone.localdate().isoformat(),
@@ -146,7 +146,7 @@ class InventoryAuditCreateView(LoginRequiredMixin, View):
             })
 
         if not product_ids:
-            messages.error(request, 'Vui long chon it nhat 1 san pham de kiem ke.')
+            messages.error(request, 'Vui lòng chọn ít nhất 1 sản phẩm để kiểm kê.')
             return render(request, 'inventory/audit_create.html', {
                 'products': Product.objects.select_related('category').all().order_by('name'),
                 'default_audit_date': timezone.localdate().isoformat(),
@@ -174,7 +174,7 @@ class InventoryAuditCreateView(LoginRequiredMixin, View):
 
 class InventoryAuditDetailView(LoginRequiredMixin, View):
     def _deny(self, request):
-        messages.error(request, 'Ban khong co quyen truy cap chi tiet kiem ke.')
+        messages.error(request, 'Bạn không có quyền truy cập chi tiết kiểm kê.')
         return redirect('inventory:audit_list')
 
     def get(self, request, audit_id):
@@ -236,7 +236,7 @@ class InventoryAuditDetailView(LoginRequiredMixin, View):
                 return self._deny(request)
             try:
                 InventoryService.submit_check(audit_id)
-                messages.success(request, 'Da nop phien kiem ke cho ke toan duyet.')
+                messages.success(request, 'Đã nộp phiên kiểm kê cho kế toán duyệt.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:audit_detail', audit_id=audit_id)
@@ -246,7 +246,7 @@ class InventoryAuditDetailView(LoginRequiredMixin, View):
                 return self._deny(request)
             try:
                 InventoryService.approve_check(audit_id, request.user)
-                messages.success(request, 'Da duyet phien kiem ke va cap nhat ton kho.')
+                messages.success(request, 'Đã duyệt phiên kiểm kê và cập nhật tồn kho.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:audit_detail', audit_id=audit_id)
@@ -257,25 +257,25 @@ class InventoryAuditDetailView(LoginRequiredMixin, View):
             reason = _query_value(request.POST, 'reason')
             try:
                 InventoryService.cancel_check(audit_id, reason)
-                messages.warning(request, 'Da huy phien kiem ke.')
+                messages.warning(request, 'Đã hủy phiên kiểm kê.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:audit_detail', audit_id=audit_id)
 
-        messages.error(request, 'Thao tac khong hop le.')
+        messages.error(request, 'Thao tác không hợp lệ.')
         return redirect('inventory:audit_detail', audit_id=audit_id)
 
 
 class InventoryAuditExportView(LoginRequiredMixin, View):
     def get(self, request, audit_id):
         if not _is_allowed(request.user, ('KE_TOAN', 'ADMIN')):
-            messages.error(request, 'Ban khong co quyen xuat bao cao kiem ke.')
+            messages.error(request, 'Bạn không có quyền xuất báo cáo kiểm kê.')
             return redirect('inventory:audit_detail', audit_id=audit_id)
 
         export_format = _query_value(request.GET, 'format') or 'excel'
         audit, rows = ReportRepository.audit_report_rows(audit_id)
         if audit is None:
-            messages.error(request, 'Khong tim thay phien kiem ke.')
+            messages.error(request, 'Không tìm thấy phiên kiểm kê.')
             return redirect('inventory:audit_list')
 
         try:
@@ -291,13 +291,13 @@ class InventoryAuditExportView(LoginRequiredMixin, View):
             )
             return response
         except ValueError:
-            messages.error(request, 'Dinh dang xuat khong duoc ho tro.')
+            messages.error(request, 'Định dạng xuất không được hỗ trợ.')
             return redirect('inventory:audit_detail', audit_id=audit_id)
 
 
 class InventoryLossListView(LoginRequiredMixin, View):
     def _deny(self, request):
-        messages.error(request, 'Ban khong co quyen truy cap man hinh hao hut.')
+        messages.error(request, 'Bạn không có quyền truy cập màn hình hao hụt.')
         return redirect('dashboard')
 
     def get(self, request):
@@ -315,11 +315,11 @@ class InventoryLossListView(LoginRequiredMixin, View):
         date_from = _parse_date(date_from_raw)
         date_to = _parse_date(date_to_raw)
         if date_from_raw and date_from is None:
-            messages.error(request, 'Ngay bat dau khong hop le. Da bo qua bo loc nay.')
+            messages.error(request, 'Ngày bắt đầu không hợp lệ. Đã bỏ qua bộ lọc này.')
         if date_to_raw and date_to is None:
-            messages.error(request, 'Ngay ket thuc khong hop le. Da bo qua bo loc nay.')
+            messages.error(request, 'Ngày kết thúc không hợp lệ. Đã bỏ qua bộ lọc này.')
         if date_from and date_to and date_from > date_to:
-            messages.error(request, 'Ngay bat dau khong duoc lon hon ngay ket thuc.')
+            messages.error(request, 'Ngày bắt đầu không được lớn hơn ngày kết thúc.')
             date_from = None
             date_to = None
 
@@ -398,7 +398,7 @@ class InventoryLossListView(LoginRequiredMixin, View):
                     unit_cost=unit_cost,
                     user=request.user,
                 )
-                messages.success(request, f'Da tao phieu hao hut {loss.loss_code}.')
+                messages.success(request, f'Đã tạo phiếu hao hụt {loss.loss_code}.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:loss_list')
@@ -412,7 +412,7 @@ class InventoryLossListView(LoginRequiredMixin, View):
             loss_reason = _query_value(request.POST, 'loss_reason')
             try:
                 LossService.update_loss(loss_id=loss_id, loss_type=loss_type, loss_reason=loss_reason)
-                messages.success(request, 'Da cap nhat phieu hao hut.')
+                messages.success(request, 'Đã cập nhật phiếu hao hụt.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:loss_list')
@@ -424,7 +424,7 @@ class InventoryLossListView(LoginRequiredMixin, View):
             loss_id = _query_value(request.POST, 'loss_id')
             try:
                 LossService.approve_loss(loss_id=loss_id, reviewed_by=request.user)
-                messages.success(request, 'Da duyet phieu hao hut.')
+                messages.success(request, 'Đã duyệt phiếu hao hụt.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:loss_list')
@@ -437,19 +437,19 @@ class InventoryLossListView(LoginRequiredMixin, View):
             rejection_note = _query_value(request.POST, 'rejection_note')
             try:
                 LossService.reject_loss(loss_id=loss_id, reviewed_by=request.user, rejection_note=rejection_note)
-                messages.warning(request, 'Da tu choi phieu hao hut.')
+                messages.warning(request, 'Đã từ chối phiếu hao hụt.')
             except DjangoValidationError as exc:
                 messages.error(request, str(exc.message))
             return redirect('inventory:loss_list')
 
-        messages.error(request, 'Thao tac khong hop le.')
+        messages.error(request, 'Thao tác không hợp lệ.')
         return redirect('inventory:loss_list')
 
 
 class InventoryLossExportView(LoginRequiredMixin, View):
     def get(self, request):
         if not _is_allowed(request.user, ('KE_TOAN', 'ADMIN')):
-            messages.error(request, 'Ban khong co quyen xuat bao cao hao hut.')
+            messages.error(request, 'Bạn không có quyền xuất báo cáo hao hụt.')
             return redirect('inventory:loss_list')
 
         export_format = _query_value(request.GET, 'format') or 'excel'
@@ -458,7 +458,7 @@ class InventoryLossExportView(LoginRequiredMixin, View):
         loss_type = _query_value(request.GET, 'loss_type') or None
 
         if date_from and date_to and date_from > date_to:
-            messages.error(request, 'Ngay bat dau khong duoc lon hon ngay ket thuc.')
+            messages.error(request, 'Ngày bắt đầu không được lớn hơn ngày kết thúc.')
             return redirect('inventory:loss_list')
 
         rows = list(
@@ -489,13 +489,13 @@ class InventoryLossExportView(LoginRequiredMixin, View):
             )
             return response
         except ValueError:
-            messages.error(request, 'Dinh dang xuat khong duoc ho tro.')
+            messages.error(request, 'Định dạng xuất không được hỗ trợ.')
             return redirect('inventory:loss_list')
 
 
 class InventoryDiscrepancyView(LoginRequiredMixin, View):
     def _deny(self, request):
-        messages.error(request, 'Ban khong co quyen truy cap bao cao chenh lech.')
+        messages.error(request, 'Bạn không có quyền truy cập báo cáo chênh lệch.')
         return redirect('dashboard')
 
     def get(self, request):
@@ -528,7 +528,7 @@ class InventoryDiscrepancyView(LoginRequiredMixin, View):
 class InventoryDiscrepancyExportView(LoginRequiredMixin, View):
     def get(self, request):
         if not _is_allowed(request.user, ('KE_TOAN', 'ADMIN')):
-            messages.error(request, 'Ban khong co quyen xuat bao cao chenh lech.')
+            messages.error(request, 'Bạn không có quyền xuất báo cáo chênh lệch.')
             return redirect('inventory:discrepancy_report')
 
         export_format = _query_value(request.GET, 'format') or 'excel'
@@ -550,5 +550,5 @@ class InventoryDiscrepancyExportView(LoginRequiredMixin, View):
             )
             return response
         except ValueError:
-            messages.error(request, 'Dinh dang xuat khong duoc ho tro.')
+            messages.error(request, 'Định dạng xuất không được hỗ trợ.')
             return redirect(f"{reverse('inventory:discrepancy_report')}")
